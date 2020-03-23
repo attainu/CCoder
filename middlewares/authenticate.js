@@ -9,7 +9,10 @@ module.exports = async (req, res, next) => {
 
             const user = await User.findOne({ _id: token.id})
 
+<<<<<<< HEAD
             //user.accessToken = authToken
+=======
+>>>>>>> 0f552d170dd8e1ab10f1fe86f451ec1978ee6fee
             req.user = user
             next()
         }
