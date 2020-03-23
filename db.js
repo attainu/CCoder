@@ -1,7 +1,7 @@
 var mongoose = require("mongoose");
 
 mongoose
-  .connect(process.env.MONGODB_URI.replace("<password>",process.env.MONGODB_PASSWORD), {
+  .connect("mongodb://127.0.0.1:27017/Ccoder", {
     useNewUrlParser: true,
     useUnifiedTopology: true,
     useCreateIndex: true
