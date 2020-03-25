@@ -2,6 +2,7 @@ const Testcase = require("../models/Testcase");
 const Discussion = require('../models/Discussion');
 const Challenge = require("../models/Challenge");
 const Submission = require('../models/Submission');
+const User = require('../models/User');
 const Contest = require('../models/Contest');
 
 
@@ -216,5 +217,22 @@ module.exports = {
        }
        
 
-    }
+    },
+    async contestModerator(req,res){
+        try{
+            const contestname = req.params.contest
+            const username=req.params.username
+            const contest = await Contest.find({name:contestname})
+            const user = await User.find({name:username})
+            await user[0].moderator.push(contest[0])
+            await user[0].save()
+            await contest[0].moderators.push(user[0])
+            await contest[0].save()
+            res.send('User added as moderator')
+        }
+        catch(err){
+            console.log(err.message)
+
+        }
+    },
 };
