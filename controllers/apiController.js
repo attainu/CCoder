@@ -180,7 +180,7 @@ module.exports = {
             res.status(500).send('Server Error')
         }
     },
-    async msContentScript(req,res){
+    async contest(req,res){
         try{
             const details = req.body
             const user = req.user;

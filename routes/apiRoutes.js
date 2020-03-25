@@ -1,6 +1,6 @@
 const { Router } = require("express");
 const router = Router()
-const {testCase,submission,challengeDiscussion, challenge } = require("../controllers/apiController");
+const {testCase,submission,challengeDiscussion, challenge,contest } = require("../controllers/apiController");
 const authenticate = require('../middlewares/authenticate');
 
 
