@@ -2,6 +2,8 @@ const Testcase = require("../models/Testcase");
 const Discussion = require('../models/Discussion');
 const Challenge = require("../models/Challenge");
 const Submission = require('../models/Submission');
+const Contest = require('../models/Contest');
+
 
 
 const { c, cpp, node, python, java } = require('compile-run');
@@ -97,30 +99,8 @@ module.exports = {
             let score = 0;
             let scorepertc = maxScore / challenge[0].testCases.length
 
-            if (language == 'c') {
-                const result = await c.runSource(code);
-                if (code.includes('\n') == false) {
-                    result.stdout = result.stdout.replace('\n', '')
-                }
-                else if (code.includes('\n')) {
-                    result.stdout = result.stdout.slice(0, -1)
-                }
-                if (result.stderr.length != 0) console.log(result.stderr)
-                else {
-                    for (i = 0; i < challenge[0].testCases.length; i++) {
-                        if (result.stdout == challenge[0].testCases[i].body) {
-                            console.log('pass' + i)
-                            score = score + scorepertc
-
-                        }
-                        else {
-                            console.log('fail' + i)
-                        }
-                    }
-                }
-
-            }
-            else if (language == 'python') {
+            
+            if (language == 'python') {
                 for (i = 0; i < challenge[0].testCases.length; i++) {
                     const input = '\n' + challenge[0].testCases[i].input
                     const newcode = code + input
@@ -146,48 +126,6 @@ module.exports = {
                 user.submissions.push(submission);
                 await user.save()
                 res.json({ score: score })
-            }
-            else if (language == 'java') {
-                const result = await java.runSource(code);
-                if (code.includes('\n') == false) {
-                    result.stdout = result.stdout.replace('\n', '')
-                }
-                else if (code.includes('\n')) {
-                    result.stdout = result.stdout.slice(0, -1)
-                }
-                if (result.stderr.length != 0) console.log(result.stderr)
-                else {
-                    for (i = 0; i < challenge[0].testCases.length; i++) {
-                        if (result.stdout == challenge[0].testCases[i].body) {
-                            score = score + scorepertc
-
-                        }
-                        else {
-
-                        }
-                    }
-                }
-            }
-            else if (language == 'cpp') {
-                const result = await cpp.runSource(code);
-                if (code.includes('\n') == false) {
-                    result.stdout = result.stdout.replace('\n', '')
-                }
-                else if (code.includes('\n')) {
-                    result.stdout = result.stdout.slice(0, -1)
-                }
-                if (result.stderr.length != 0) console.log(result.stderr)
-                else {
-                    for (i = 0; i < challenge[0].testCases.length; i++) {
-                        if (result.stdout == challenge[0].testCases[i].body) {
-                            score = score + scorepertc
-
-                        }
-                        else {
-
-                        }
-                    }
-                }
             }
             else if (language == 'node') {
                 for (i = 0; i < challenge[0].testCases.length; i++) {
@@ -241,9 +179,18 @@ module.exports = {
             console.log(err.message);
             res.status(500).send('Server Error')
         }
+    },
+    async msContentScript(req,res){
+        try{
+            const details = req.body
+            const user = req.user;
+
+            const contest = Contest.create({details})
+            
+        }
+        catch(err){
+            console.log(err.message)
+            res.status(500).send('Server Error')
+        }
     }
-
-
-
-
 };
