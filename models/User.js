@@ -36,7 +36,13 @@ const userSchema = new Schema(
         contests: [
             {
                 type: Schema.Types.ObjectId,
-                ref: "Contest"
+                ref: "contest"
+            }
+        ],
+        moderator: [
+            {
+                type: Schema.Types.ObjectId,
+                ref: "contest"
             }
         ],
         discussions: [
