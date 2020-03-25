@@ -3,13 +3,17 @@ var Schema = mongoose.Schema;
 
 var testCaseSchema = new Schema(
   {
-    body: {
+    input: {
       type: String,
       required: true
     },
-    adminChallenge: {
+    result: {
+      type: String,
+      required: true
+    },
+    challenge: {
       type: Schema.Types.ObjectId,
-      ref: "adminchallenge"
+      ref: "challenge"
     }
   },
   { timestamps: true }

@@ -1,5 +1,5 @@
 const User = require('../models/User');
-const Discussion = require('../models/Discussion');
+const transport = require('../mailer');
 
 module.exports = {
     async userRegister(req, res) {
@@ -10,10 +10,21 @@ module.exports = {
             }
             const createUser = await User.create(user);
             const accessToken = await createUser.generateAuthToken();
+
+            const mailer = await transport.sendMail({
+                from: process.env.GMAIL_EMAIL,
+                to: user.email,
+                subject: "Mail from Ccoder",
+                text:
+                    `Hi ${user.name}, Thank you for Joining the Ccoder. Hope You can develop some problem solving skills.
+                    
+                    -with regards, Ccoder Team`
+            })
             res.status(201).json({
                 statusCode:201,
                 createUser,
                 accessToken: accessToken,
+                mailer,
                 expiresIn: "24h"
             });
         } catch (err) {

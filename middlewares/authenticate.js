@@ -8,11 +8,7 @@ module.exports = async (req, res, next) => {
             const token = await verify(authToken, process.env.JWT_SECRET_KEY);
 
             const user = await User.findOne({ _id: token.id})
-
-<<<<<<< HEAD
-            //user.accessToken = authToken
-=======
->>>>>>> 0f552d170dd8e1ab10f1fe86f451ec1978ee6fee
+            
             req.user = user
             next()
         }

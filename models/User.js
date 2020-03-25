@@ -56,6 +56,12 @@ const userSchema = new Schema(
                 type: Schema.Types.ObjectId,
                 ref: "submission"
             }
+        ],
+        challenge:[
+            {
+                type: Schema.Types.ObjectId,
+                ref: "challenge"
+            }
         ]
     },
     { timestamps: true}

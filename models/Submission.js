@@ -1,24 +1,32 @@
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 
-const discussionSchema = new Schema(
+const submissionSchema = new Schema(
     {
         user: {
             type: Schema.Types.ObjectId,
             ref: 'user'
         },
+        language: {
+            type: String,
+            required: true
+        },
         challenge: {
             type: Schema.Types.ObjectId,
             ref: 'challenge'
         },
-        text: {
+        code: {
             type: String,
             required: true
+        },
+        score:{
+            type:Number,
+            required:true
         }
     },
     { timestamps: true}
 );
 
-const Discussion = mongoose.model("discussion", discussionSchema);
+const Submission = mongoose.model("submission", submissionSchema);
 
-module.exports = Discussion;
+module.exports = Submission;
