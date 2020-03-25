@@ -25,9 +25,8 @@ const contestSchema = new Schema(
     },
     organizationType: {
       type: String,
-      required: true
     },
-    Scoring: {
+    scoring: {
       type: Number,
       required: true
     },
@@ -38,21 +37,23 @@ const contestSchema = new Schema(
       type: String,
       trim: true,
     },
-    Prizes: {
+    prizes: {
       type: String
     },
-    Rules: {
+    rules: {
       type: String,
       required: true
     },
     signups: [{
       type: Schema.Types.ObjectId,
-      ref: "user"
+      ref: "user",
+      unique:true
     }],
     moderators: [
       {
         type: Schema.Types.ObjectId,
-        ref: "user"
+        ref: "user",
+        unique:true
       }
     ],
     challenges: [

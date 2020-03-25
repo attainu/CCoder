@@ -164,15 +164,18 @@ module.exports = {
     },
     async challengeDiscussion(req, res) {
         try {
+            const challengename = req.params.challenge
+            let challenge = await Challenge.find({ name: challengename })
             const user = req.user;
             const { text } = req.body;
-
             if (!text) return res.status(400).json({ statusCode: 400, message: 'Bad Request' });
 
             const createDiscussion = await Discussion.create({ text, user: user._id });
 
             user.discussions.push(createDiscussion._id);
             await user.save()
+            challenge[0].discussions.push(submission)
+            await challenge[0].save()
 
             res.status(201).json({ statusCode: 201, createDiscussion });
         } catch (err) {
@@ -184,13 +187,34 @@ module.exports = {
         try{
             const details = req.body
             const user = req.user;
-
-            const contest = Contest.create({details})
+            details.moderators=user._id
+            const contest = await Contest.create(details)
+            user.moderator.push(contest)
+            await user.save()
+            res.json({contest:contest})
             
         }
         catch(err){
             console.log(err.message)
             res.status(500).send('Server Error')
         }
+    },
+    async signup(req,res){
+       try{
+        const user = req.user
+        const contestname = req.params.contest
+        const contest = await Contest.find({name:contestname})
+        await contest[0].signups.push(user._id)
+        await contest[0].save()
+        await user.contests.push(contest[0]);
+        await user.save()
+        res.json({user:user})
+       } 
+       catch(err){
+           console.log(err)
+           res.send('Server Error')
+       }
+       
+
     }
 };
