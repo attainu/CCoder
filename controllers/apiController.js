@@ -49,7 +49,7 @@ module.exports = {
             }
             else {
                 const challenge = await Challenge.create({ name, description, question, output, editorial, maxScore, createdBy: user._id, func_name, func_py, func_node, func_java, func_c, func_cpp });
-                user.problems.push(challenge._id)
+                user.challenge.push(challenge._id)
                 await user.save()
                 res.status(201).json({ status: 201, challenge: challenge, createdBy: user._id });
             }
@@ -148,10 +148,8 @@ module.exports = {
                     }
                 }
                 const submission = await Submission.create({ code: code, score: score, challenge: challenge[0]._id, user: user._id, language: language });
-                console.log(submission)
                 challenge[0].submissions.push(submission)
                 await challenge[0].save()
-                console.log(user)
                 user.submissions.push(submission);
                 await user.save()
                 res.json({ score: score })
@@ -215,6 +213,62 @@ module.exports = {
            res.send('Server Error')
        }
        
+    },
 
+    async getChallenge(req,res){
+        try {
+            const user = req.user
+            const challenge = await 
+            Challenge.find({
+                $and : [
+                    {$or: [
+                    { 'createdBy': user._id},
+                    { 'createdBy': null }
+                    ]},
+                    { $or :[{ 'contest' : null}]}
+                    ] 
+                })
+            if(String(challenge[0].createdBy) == String(user._id)){
+                res.send(challenge)
+            } else {
+                res.send(challenge)
+            }
+
+        } catch (err) {
+            console.log(err);
+            res.send('Server Error')
+        }
+    },
+
+    async contestChallenge(req,res){
+        try {
+            const user = req.user;
+            const contestName = req.params.contest;
+            const challengeName = req.params.challenge;
+
+            const contest = await Contest.find({name: contestName});
+            const challenge = await Challenge.find({name: challengeName});
+            const name = challenge[0].name + '-' + contestName;
+            const question = challenge[0].question + '-';
+            const func_py = challenge[0].func_py;
+            const func_node = challenge[0].func_node
+            const func_name = challenge[0].func_name
+            const func_java = 'not defined'
+            const func_c = 'not defined'
+            const func_cpp = 'not defined'
+            const description = challenge[0].description;
+            const output = challenge[0].output;
+            const testCase = challenge[0].testCases;
+            const editorial = challenge[0].editorial;
+            const maxScore =challenge[0].maxScore;
+
+            const challengeCreation = await Challenge.create({name, description, question, output, editorial, maxScore, func_name, func_py, func_node, func_java, func_c, func_cpp,testCases:testCase, createdBy: user._id, contest: contest[0]._id})
+            contest[0].challenges.push(challengeCreation)
+            contest[0].save()
+            res.send(challengeCreation)
+        } catch (err) {
+            console.log(err);
+            res.send('Server Error')
+        }
     }
 };

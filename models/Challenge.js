@@ -16,7 +16,6 @@ const challengeSchema = new Schema(
       type: String,
       required: true,
       trim: true,
-      unique: true
     },
     func_name: {
       type: String,
@@ -75,12 +74,10 @@ const challengeSchema = new Schema(
         ref: "submission"
       }
     ],
-    contests: [
-      {
+    contest: {
           type: Schema.Types.ObjectId,
           ref: "contest"
-      }
-  ],
+      },
 
   },
   { timestamps: true }
