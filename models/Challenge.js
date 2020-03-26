@@ -21,6 +21,10 @@ const challengeSchema = new Schema(
       type: String,
       required: true
     },
+    no_of_args:{
+      type:Number,
+      required:true
+    },
     func_py: {
       type: String,
       required: true
@@ -56,6 +60,11 @@ const challengeSchema = new Schema(
       type: Schema.Types.ObjectId,
       ref: "user"
     },
+    bookmarkedBy: [{
+      type: Schema.Types.ObjectId,
+      ref: "user",
+      unique:true
+    }],
     testCases: [
       {
         type: Schema.Types.ObjectId,
