@@ -60,7 +60,7 @@ const userSchema = new Schema(
         bookmarks: [
             {
                 type: Schema.Types.ObjectId,
-                ref: "bookmark"
+                ref: "challenge",
             }
         ],
         submissions: [
