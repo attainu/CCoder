@@ -1,5 +1,6 @@
 const User = require('../models/User');
 const transport = require('../mailer');
+const bcrypt = require("bcryptjs");
 
 module.exports = {
     async userRegister(req, res) {
@@ -68,6 +69,42 @@ module.exports = {
 
     async singleUser(req, res){
         res.json(req.user)
+    },
+
+    async userProfileUpdate(req, res){
+        try {
+            const token = req.params.token
+
+            const profileUpdate = await User.updateOne({accessToken: token},{...req.body},{new: true});
+            res.status(201).send(profileUpdate);
+        } catch (err) {
+            console.log(err.message);
+            res.status(500).send('Server Error');
+        }
+    },
+
+    async userChangePassword(req,res){
+        try {
+            const accessToken = req.params.token
+            const {oldpassword, newpassword, confirmpassword} = req.body;
+            const password = await User.findByPassword(accessToken, oldpassword);
+
+            if(password === 'Invalid Credentials') {
+                res.send(401).send('Bad Request')
+            }else {
+                if(newpassword === confirmpassword){
+                    const hashedpassword = await bcrypt.hash(newpassword, 10);
+                    const resetPassword = await User.updateOne({accessToken: accessToken},{password: hashedpassword}, {new: true});
+                    res.status(200).send(resetPassword)
+                }
+                else {
+                    res.status(401).send('Bad Request')
+                }
+            }
+        } catch (err) {
+            console.log(err.message);
+            res.status(500).send('Server Error')
+        }
     }
 
 }

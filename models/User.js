@@ -115,9 +115,21 @@ userSchema.statics.nullifyToken = async (token) => {
     }
 }
 
+userSchema.statics.findByPassword = async (accessToken, oldpassword) => {
+    try {
+        const user = await User.findOne({accessToken:accessToken});
+        if(!user) throw new Error("Invalid Credentials");
+        const isMatched = await bcrypt.compare(oldpassword, user.password);
+        if(!isMatched) throw new Error("Invalid Credentials");
+        return user;
+    } catch (err) {
+        err.name = 'AuthError';
+        throw err;
+    }
+};
+
 userSchema.pre("save", async function(next) {
     const user = this;
-
     try {
         if(user.isModified("password")) {
             const hashedpassword = await bcrypt.hash(user.password, 10);

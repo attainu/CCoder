@@ -123,7 +123,6 @@ module.exports = {
                 const submission = await Submission.create({ code: code, score: score, challenge: challenge[0]._id, user: user._id, language: language });
                 challenge[0].submissions.push(submission)
                 await challenge[0].save()
-                console.log(user)
                 user.submissions.push(submission);
                 await user.save()
                 res.json({ score: score })
@@ -290,6 +289,32 @@ module.exports = {
         catch (err) {
             console.log(err.message)
 
+        }
+    },
+    async challengeLeaderboard(req,res){
+        try {
+            const challengename = req.params.challenge
+            let challenges = await Challenge.find({name:challengename}).populate({path: 'submissions', options: { sort: { 'score': -1 }} })
+            let submissions = challenges[0].submissions.map(el =>{
+                const user = el.user
+                const score = el.score
+                return {user:user,score:score,language: el.language}
+            })
+            var sub = {};
+            var newSubmission = submissions.filter(function(entry) {
+            if (sub[entry.user]) {
+            return false;
+            }
+             sub[entry.user] = true;
+             return true;
+            });
+            
+            res.json({sub:newSubmission })
+            
+            res.status(201).json(add)
+        } catch (err) {
+            console.log(err.message)
+            res.status(500).send("Server Error");
         }
     }
 }
