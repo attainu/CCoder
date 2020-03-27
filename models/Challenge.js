@@ -60,11 +60,12 @@ const challengeSchema = new Schema(
       type: Schema.Types.ObjectId,
       ref: "user"
     },
-    bookmarkedBy: [{
+    bookmarkedBy: [
+      {
       type: Schema.Types.ObjectId,
-      ref: "user",
-      unique:true
-    }],
+      ref: "user"
+      }
+    ],
     testCases: [
       {
         type: Schema.Types.ObjectId,

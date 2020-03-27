@@ -44,8 +44,9 @@ module.exports = {
             const func_java = 'not defined'
             const func_c = 'not defined'
             const func_cpp = 'not defined'
+            console.log('1')
             if (user === undefined) {
-                const challenge = await Challenge.create({ name, description, question, output, editorial, maxScore, func_name,no_of_args, func_py, func_node, func_java, func_c, func_cpp });
+                const challenge = await Challenge.create({ name, description, question, output, editorial, maxScore, func_name,no_of_args, func_py, func_node, func_java, func_c, func_cpp});
                 res.status(201).json({ status: 201, challenge: challenge });
             }
             else {
@@ -54,6 +55,8 @@ module.exports = {
                 await user.save()
                 res.status(201).json({ status: 201, challenge: challenge, createdBy: user._id });
             }
+            console.log('2')
+
 
         } catch (err) {
             console.log(err.message);
@@ -136,7 +139,6 @@ module.exports = {
                 const submission = await Submission.create({ code: code, score: score, challenge: challenge[0]._id, user: user._id, language: language });
                 challenge[0].submissions.push(submission)
                 await challenge[0].save()
-                console.log(user)
                 user.submissions.push(submission);
                 await user.save()
                 res.json({ score: score })
@@ -153,7 +155,6 @@ module.exports = {
                     else if (code.includes('\n')) {
                         result.stdout = result.stdout.slice(0, -1)
                     }
-                    console.log(result)
 
                     if (result.stderr.length != 0) console.log(result.stderr)
                     else if (result.stdout == challenge[0].testCases[i].result) {
@@ -392,8 +393,6 @@ module.exports = {
             console.log(err.message)
             res.send(err)
         }
-
-        
-
     }
+    
 }
