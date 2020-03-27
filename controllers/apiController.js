@@ -4,6 +4,7 @@ const Challenge = require("../models/Challenge");
 const Submission = require('../models/Submission');
 const User = require('../models/User');
 const Contest = require('../models/Contest');
+const { validationResult}=require("express-validator")
 
 
 
@@ -12,6 +13,10 @@ const { c, cpp, node, python, java } = require('compile-run');
 
 module.exports = {
     async challenge(req, res) {
+        const errors = validationResult(req)
+        if (!errors.isEmpty()) {
+          return res.status(422).json({ errors: errors.array() })
+        }
         try {
             const funct_node = (name, no_of_args) => {
                 const func = `
@@ -44,7 +49,6 @@ module.exports = {
             const func_java = 'not defined'
             const func_c = 'not defined'
             const func_cpp = 'not defined'
-            console.log('1')
             if (user === undefined) {
                 const challenge = await Challenge.create({ name, description, question, output, editorial, maxScore, func_name, no_of_args, func_py, func_node, func_java, func_c, func_cpp });
                 res.status(201).json({ status: 201, challenge: challenge });
@@ -55,7 +59,6 @@ module.exports = {
                 await user.save()
                 res.status(201).json({ status: 201, challenge: challenge, createdBy: user._id });
             }
-            console.log('2')
 
 
         } catch (err) {
@@ -335,6 +338,10 @@ module.exports = {
         }
     },
     async updateUserChallenge(req, res) {
+        const errors = validationResult(req)
+        if (!errors.isEmpty()) {
+          return res.status(422).json({ errors: errors.array() })
+        }
         try {
             const funct_node = (name, no_of_args) => {
                 const func = `

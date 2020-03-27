@@ -1,9 +1,14 @@
 const User = require('../models/User');
 const transport = require('../mailer');
 const bcrypt = require("bcryptjs");
+const { validationResult}=require("express-validator")
 
 module.exports = {
     async userRegister(req, res) {
+        const errors = validationResult(req)
+            if (!errors.isEmpty()) {
+              return res.status(422).json({ errors: errors.array() })
+        }
         try {
             const user = req.body;
             if(!user.email || !user.password || !user.name ){
@@ -72,6 +77,10 @@ module.exports = {
     },
 
     async userProfileUpdate(req, res){
+        const errors = validationResult(req)
+        if (!errors.isEmpty()) {
+          return res.status(422).json({ errors: errors.array() })
+        }
         try {
             const token = req.params.token
 
@@ -84,6 +93,10 @@ module.exports = {
     },
 
     async userChangePassword(req,res){
+        const errors = validationResult(req)
+        if (!errors.isEmpty()) {
+          return res.status(422).json({ errors: errors.array() })
+    }
         try {
             const accessToken = req.params.token
             const {oldpassword, newpassword, confirmpassword} = req.body;
