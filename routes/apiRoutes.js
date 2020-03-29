@@ -26,7 +26,7 @@ router.post("/contest/new/:token",authenticate, contest);
 router.post("/contest/:contest/signup/:token",authenticate, signup);
 router.post("/contest/:contest/:challenge/:token", authenticate, contestChallenge);
 router.post("/contest/:contest/addmoderator/:username/:token",authenticate, contestModerator);
-router.post("/:challenge/leaderboard/:token", authenticate, challengeLeaderboard);
+router.get("/:challenge/leaderboard/:token", authenticate, challengeLeaderboard);
 
 router.post("/:challenge/bookmark/add/:token",authenticate, addBookmark);
 

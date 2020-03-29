@@ -314,9 +314,10 @@ module.exports = {
     async challengeLeaderboard(req, res) {
         try {
             const challengename = req.params.challenge
-            let challenges = await Challenge.find({ name: challengename }).populate({ path: 'submissions', options: { sort: { 'score': -1 } } })
-            let submissions = challenges[0].submissions.map(el => {
-                const user = el.user
+            let challenges = await Challenge.find({ name: challengename })
+            let submission = await Submission.find({challenge:challenges[0]._id}).sort({'score':-1}).populate('user')
+            let submissions = submission.map(el => {
+                const user = el.user.username
                 const score = el.score
                 return { user: user, score: score, language: el.language }
             })
@@ -330,11 +331,10 @@ module.exports = {
             });
 
             res.json({ sub: newSubmission })
-
-            res.status(201).json(add)
-        } catch (err) {
+        } 
+        catch (err) {
             console.log(err.message)
-            res.status(500).send("Server Error");
+            res.status(501).send("Server Error");
         }
     },
     async updateUserChallenge(req, res) {
