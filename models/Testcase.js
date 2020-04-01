@@ -7,6 +7,10 @@ var testCaseSchema = new Schema(
       type: String,
       required: true
     },
+    rawinput:{
+      type: String,
+      required: true
+    },
     result: {
       type: String,
       required: true

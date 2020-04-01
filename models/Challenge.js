@@ -45,9 +45,14 @@ const challengeSchema = new Schema(
       type: String,
       required: true
     },
+    input:{
+      type:String,
+      required:true
+    },
     output: {
       type: String,
       trim: true,
+      required:true
     },
     editorial: {
       type: String

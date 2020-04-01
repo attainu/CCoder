@@ -42,19 +42,72 @@ module.exports = {
         `
                 return func
             }
+const funct_c = (no_of_args,input,output)=>{
+  const func = `#include<stdio.h>
+/**
+* Complete this method
+* I will be sending ${no_of_args} input
+* sample ${input} so use symbol in scanf according to the sample.
+* Sample output should be like this ${output} 
+*/
+void main()
+{    
+  
+    scanf("");
+    printf("",result);
+    return 0;
+}`
+  return func
+}
+const funct_cpp = (no_of_args,input,output)=>{
+    const func = `#include <iostream>
+using namespace std;
+// Complete this method
+// I will be sending ${no_of_args} arguements as input
+// sample input :${input}
+// Sample output: ${output} 
+
+int main()
+{
+    int a, b;
+    // All the required Input Should be taken in single Statement
+    cin >> b >> a;
+    sumOfTwoNumbers = firstNumber + secondNumber;
+    // Only One Print Statement Should be used
+    cout << ;     
+
+    return 0;
+}`
+    return func
+  }
+const funct_java = (no_of_args,input,output)=>{
+    const func = `import java.util.*;
+public class Solution {
+    // Complete this method
+    // I will be sending ${no_of_args} input so use ${no_of_args} inputs
+    // sample input: ${input} .
+    // Sample output : ${output} 
+    public static void main(String[] args) {
+      Scanner sc=new Scanner(System.in);
+      
+      System.out.println();
+    }
+}`
+    return func
+  }
             const user = req.user
-            const { name, description, question, output, editorial, maxScore, func_name, no_of_args } = req.body;
+            const { name, description, question,input, output, editorial, maxScore, func_name, no_of_args } = req.body;
             const func_py = funct_py(func_name, no_of_args)
             const func_node = funct_node(func_name, no_of_args)
-            const func_java = 'not defined'
-            const func_c = 'not defined'
-            const func_cpp = 'not defined'
+            const func_java = funct_java(no_of_args,input,output)
+            const func_c = funct_c(no_of_args,input,output)
+            const func_cpp = funct_cpp(no_of_args,input,output)
             if (user === undefined) {
-                const challenge = await Challenge.create({ name, description, question, output, editorial, maxScore, func_name, no_of_args, func_py, func_node, func_java, func_c, func_cpp });
+                const challenge = await Challenge.create({ name, description, question,input,output, editorial, maxScore, func_name, no_of_args, func_py, func_node, func_java, func_c, func_cpp });
                 res.status(201).json({ status: 201, challenge: challenge });
             }
             else {
-                const challenge = await Challenge.create({ name, description, question, output, editorial, maxScore, createdBy: user._id, func_name, no_of_args, func_py, func_node, func_java, func_c, func_cpp });
+                const challenge = await Challenge.create({ name, description, question,input ,output, editorial, maxScore, createdBy: user._id, func_name, no_of_args, func_py, func_node, func_java, func_c, func_cpp });
                 user.challenge.push(challenge._id)
                 await user.save()
                 res.status(201).json({ status: 201, challenge: challenge, createdBy: user._id });
@@ -89,12 +142,13 @@ module.exports = {
                     newinput.push(input[i])
                 }
             }
+            console.log(newinput)
             let testCase = 0
             if (typeof (input) == 'string') {
-                testCase = await Testcase.create({ result, input: `${func}(${newinput})`, challenge: challenge[0]._id });
+                testCase = await Testcase.create({ rawinput:`${newinput}`,result:result, challenge: challenge[0]._id,input: `${func}(${newinput})` });
             }
             else {
-                testCase = await Testcase.create({ result, input: `${func}(${newinput})`, challenge: challenge[0]._id });
+                testCase = await Testcase.create({ rawinput:`${newinput}`,result:result, challenge: challenge[0]._id,input: `${func}(${newinput})`});
             }
 
             challenge[0].testCases.push(testCase)
@@ -110,7 +164,7 @@ module.exports = {
     async submission(req, res) {
         try {
             const user = req.user;
-            const { language, code } = req.body
+            const { language, code} = req.body
             console.log(language)
             const challengename = req.params.challenge
             let challenge = await Challenge.find({ name: challengename }).populate('testCases')
@@ -125,12 +179,7 @@ module.exports = {
                     const input = '\n' + challenge[0].testCases[i].input
                     const newcode = code + input
                     const result = await python.runSource(newcode);
-                    if (code.includes('\n') == false) {
-                        result.stdout = result.stdout.replace('\n', '')
-                    }
-                    else if (code.includes('\n')) {
-                        result.stdout = result.stdout.slice(0, -1)
-                    }
+                    result.stdout = result.stdout.slice(0, -1)
                     if (result.stderr.length != 0) console.log(result.stderr)
                     else if (result.stdout == challenge[0].testCases[i].result) {
                         score = score + scorepertc
@@ -150,16 +199,71 @@ module.exports = {
                 for (i = 0; i < challenge[0].testCases.length; i++) {
                     const input = '\n' + challenge[0].testCases[i].input
                     const newcode = code + input
-
                     const result = await node.runSource(newcode);
-                    if (code.includes('\n') == false) {
-                        result.stdout = result.stdout.replace(/\n/g, '')
-                    }
-                    else if (code.includes('\n')) {
-                        result.stdout = result.stdout.slice(0, -1)
-                    }
-
+                    result.stdout = result.stdout.slice(0, -1)
                     if (result.stderr.length != 0) console.log(result.stderr)
+                    else if (result.stdout == challenge[0].testCases[i].result) {
+                        score = score + scorepertc
+                    }
+                    else {
+                        score = score
+                    }
+                }
+                
+                const submission = await Submission.create({ code: code, score: score, challenge: challenge[0]._id, user: user._id, language: language });
+                challenge[0].submissions.push(submission)
+                await challenge[0].save()
+                user.submissions.push(submission);
+                await user.save()
+                res.json({ score: score })
+            }
+            else if(language=='c'){
+                for (i = 0; i < challenge[0].testCases.length; i++) {
+                    let input = challenge[0].testCases[i].rawinput
+                    input = input.replace(',','\n')
+                    const result = await c.runSource(code,{stdin:input});
+                    if (result.stderr.length != 0) console.log('yes'+result.stderr)
+                    else if (result.stdout == challenge[0].testCases[i].result) {
+                        score = score + scorepertc
+                    }
+                    else {
+                        score = score
+                    }
+                }
+                const submission = await Submission.create({ code: code, score: score, challenge: challenge[0]._id, user: user._id, language: language });
+                challenge[0].submissions.push(submission)
+                await challenge[0].save()
+                user.submissions.push(submission);
+                await user.save()
+                res.json({ score: score })
+            }
+            else if(language=='c++'){
+                for (i = 0; i < challenge[0].testCases.length; i++) {
+                    let input = challenge[0].testCases[i].rawinput
+                    input = input.replace(',','\n')
+                    const result = await cpp.runSource(code,{stdin:input});
+                    if (result.stderr.length != 0) console.log('yes'+result.stderr)
+                    else if (result.stdout == challenge[0].testCases[i].result) {
+                        score = score + scorepertc
+                    }
+                    else {
+                        score = score
+                    }
+                }
+                const submission = await Submission.create({ code: code, score: score, challenge: challenge[0]._id, user: user._id, language: language });
+                challenge[0].submissions.push(submission)
+                await challenge[0].save()
+                user.submissions.push(submission);
+                await user.save()
+                res.json({ score: score })
+            }
+            else if(language=='java'){
+                for (i = 0; i < challenge[0].testCases.length; i++) {
+                    let input = challenge[0].testCases[i].rawinput
+                    input = input.replace(',','\n')
+                    const result = await java.runSource(code,{stdin:input});
+                    result.stdout = result.stdout.slice(0, -1)
+                    if (result.stderr.length != 0) console.log('yes'+result.stderr)
                     else if (result.stdout == challenge[0].testCases[i].result) {
                         score = score + scorepertc
                     }
@@ -276,8 +380,8 @@ module.exports = {
             const func_node = challenge[0].func_node
             const func_name = challenge[0].func_name
             const func_java = 'not defined'
-            const func_c = 'not defined'
-            const func_cpp = 'not defined'
+            const func_c = challenge[0].func_c
+            const func_cpp = challenge[0].func_cpp
             const description = challenge[0].description;
             const output = challenge[0].output;
             const testCase = challenge[0].testCases;
@@ -367,6 +471,59 @@ module.exports = {
     `
                 return func
             }
+            const funct_c = (no_of_args,input,output)=>{
+                const func = `#include<stdio.h>
+              /**
+              * Complete this method
+              * I will be sending ${no_of_args} input
+              * sample ${input} so use symbol in scanf according to the sample.
+              * Sample output should be like this ${output} 
+              */
+              void main()
+              {    
+                
+                  scanf("");
+                  printf("",result);
+                  return 0;
+              }`
+                return func
+              }
+              const funct_cpp = (no_of_args,input,output)=>{
+                  const func = `#include <iostream>
+              using namespace std;
+              // Complete this method
+              // I will be sending ${no_of_args} arguements as input
+              // sample input :${input}
+              // Sample output: ${output} 
+              
+              int main()
+              {
+                  int a, b;
+                  // All the required Input Should be taken in single Statement
+                  cin >> b >> a;
+                  sumOfTwoNumbers = firstNumber + secondNumber;
+                  // Only One Print Statement Should be used
+                  cout << ;     
+              
+                  return 0;
+              }`
+                  return func
+                }
+    const funct_java = (no_of_args,input,output)=>{
+    const func = `import java.util.*;
+public class Solution {
+    // Complete this method
+    // I will be sending ${no_of_args} input so use ${no_of_args} inputs
+    // sample input: ${input} .
+    // Sample output : ${output} 
+    public static void main(String[] args) {
+      Scanner sc=new Scanner(System.in);
+      
+      System.out.println();
+    }
+}`
+    return func
+  }
             const user = req.user
             const challengename = req.params.challenge
             const details = req.body
@@ -376,9 +533,19 @@ module.exports = {
                 if (details.hasOwnProperty('no_of_args') == false) {
                     details.no_of_args = challenge[0].no_of_args
                 }
-                const { func_name, no_of_args } = details
+                if (details.hasOwnProperty('input') == false) {
+                    details.input = challenge[0].input
+                }
+                if (details.hasOwnProperty('output') == false) {
+                    details.output = challenge[0].output
+                }
+                const { func_name, no_of_args,input,output } = details
                 details.func_py = funct_py(func_name, no_of_args)
                 details.func_node = funct_node(func_name, no_of_args)
+                details.func_c = funct_c(no_of_args,input,output)
+                details.func_cpp = funct_cpp(no_of_args,input,output)
+                details.func_java = funct_java(no_of_args,input,output)
+
             }
             const newchallenge = await Challenge.updateOne(
                 { name: challengename, createdBy: user._id },
