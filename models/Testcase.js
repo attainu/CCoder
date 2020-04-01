@@ -14,6 +14,10 @@ var testCaseSchema = new Schema(
     challenge: {
       type: Schema.Types.ObjectId,
       ref: "challenge"
+    },
+    user: {
+      type: Schema.Types.ObjectId,
+      ref: "user"
     }
   },
   { timestamps: true }

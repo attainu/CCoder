@@ -61,7 +61,11 @@ const contestSchema = new Schema(
         type: Schema.Types.ObjectId,
         ref: "challenge"
       }
-    ]
+    ],
+    createdBy: {
+      type: Schema.Types.ObjectId,
+      ref: "user"
+    }
   },
   { timestamps: true }
 );

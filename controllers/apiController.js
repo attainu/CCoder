@@ -72,36 +72,67 @@ module.exports = {
     },
     async testCase(req, res) {
         try {
+            const user = req.user
             const challengename = req.params.challenge
-            let challenge = await Challenge.find({ name: challengename })
-            let { result, input } = req.body
-            let func = challenge[0].func_name
-            input = input.split(",")
-            let newinput = [];
-            for (i = 0; i < input.length; i++) {
-                if (isNaN(input[i]) == false) {
-                    newinput.push(parseInt(input[i]))
+            if(user === undefined){
+                let challenge = await Challenge.find({ name: challengename, createdBy: null })
+                let { result, input } = req.body
+                let func = challenge[0].func_name
+                input = input.split(",")
+                let newinput = [];
+                for (i = 0; i < input.length; i++) {
+                    if (isNaN(input[i]) == false) {
+                        newinput.push(parseInt(input[i]))
+                    }
+                    else if (typeof (input[i]) == 'string') {
+                        newinput.push(`"${input[i]}"`)
+                    }
+                    else {
+                        newinput.push(input[i])
+                    }
                 }
-                else if (typeof (input[i]) == 'string') {
-                    newinput.push(`"${input[i]}"`)
+                let testCase = 0
+                if (typeof (input) == 'string') {
+                    testCase = await Testcase.create({ result, input: `${func}(${newinput})`, challenge: challenge[0]._id });
                 }
                 else {
-                    newinput.push(input[i])
+                    testCase = await Testcase.create({ result, input: `${func}(${newinput})`, challenge: challenge[0]._id });
                 }
-            }
-            let testCase = 0
-            if (typeof (input) == 'string') {
-                testCase = await Testcase.create({ result, input: `${func}(${newinput})`, challenge: challenge[0]._id });
-            }
-            else {
-                testCase = await Testcase.create({ result, input: `${func}(${newinput})`, challenge: challenge[0]._id });
+    
+                challenge[0].testCases.push(testCase)
+                await challenge[0].save()
+                res.status(201).json({ statuscode: 201, testCase: testCase })
+            } else {
+                let challenge = await Challenge.find({ name: challengename, createdBy: user._id })
+                let { result, input } = req.body
+                let func = challenge[0].func_name
+                input = input.split(",")
+                let newinput = [];
+                for (i = 0; i < input.length; i++) {
+                    if (isNaN(input[i]) == false) {
+                        newinput.push(parseInt(input[i]))
+                    }
+                    else if (typeof (input[i]) == 'string') {
+                        newinput.push(`"${input[i]}"`)
+                    }
+                    else {
+                        newinput.push(input[i])
+                    }
+                }
+                let testCase = 0
+                if (typeof (input) == 'string') {
+                    testCase = await Testcase.create({ result, input: `${func}(${newinput})`, challenge: challenge[0]._id, user: user._id});
+                }
+                else {
+                    testCase = await Testcase.create({ result, input: `${func}(${newinput})`, challenge: challenge[0]._id, user: user._id });
+                }
+    
+                challenge[0].testCases.push(testCase)
+                await challenge[0].save()
+                res.status(201).json({ statuscode: 201, testCase: testCase })
             }
 
-            challenge[0].testCases.push(testCase)
-            await challenge[0].save()
-            res.status(201).json({ statuscode: 201, testCase: testCase })
         }
-
         catch (err) {
             console.log(err)
             res.status(500).send("Server Error");
@@ -188,11 +219,11 @@ module.exports = {
             const { text } = req.body;
             if (!text) return res.status(400).json({ statusCode: 400, message: 'Bad Request' });
 
-            const createDiscussion = await Discussion.create({ text, user: user._id });
+            const createDiscussion = await Discussion.create({ text, user: user._id, challenge: challenge[0]._id });
 
             user.discussions.push(createDiscussion._id);
             await user.save()
-            challenge[0].discussions.push(submission)
+            challenge[0].discussions.push(createDiscussion._id)
             await challenge[0].save()
 
             res.status(201).json({ statusCode: 201, createDiscussion });
@@ -206,6 +237,7 @@ module.exports = {
             const details = req.body
             const user = req.user;
             details.moderators = user._id
+            details.createdBy = user._id
             const contest = await Contest.create(details)
             user.moderator.push(contest)
             await user.save()
@@ -283,8 +315,9 @@ module.exports = {
             const testCase = challenge[0].testCases;
             const editorial = challenge[0].editorial;
             const maxScore = challenge[0].maxScore;
+            const no_of_args = challenge[0].no_of_args
 
-            const challengeCreation = await Challenge.create({ name, description, question, output, editorial, maxScore, func_name, func_py, func_node, func_java, func_c, func_cpp, testCases: testCase, createdBy: user._id, contest: contest[0]._id })
+            const challengeCreation = await Challenge.create({ name, description, question, output, editorial, maxScore, func_name, func_py, func_node, func_java, func_c, func_cpp,no_of_args, testCases: testCase, createdBy: user._id, contest: contest[0]._id })
             contest[0].challenges.push(challengeCreation)
             contest[0].save()
             res.json({ challenge: challengeCreation })
@@ -299,7 +332,7 @@ module.exports = {
             const contestname = req.params.contest
             const username = req.params.username
             const contest = await Contest.find({ name: contestname })
-            const user = await User.find({ name: username })
+            const user = await User.find({ username: username })
             await user[0].moderator.push(contest[0])
             await user[0].save()
             await contest[0].moderators.push(user[0])
@@ -337,7 +370,7 @@ module.exports = {
             res.status(500).send("Server Error");
         }
     },
-    async updateUserChallenge(req, res) {
+    async updateChallenge(req, res) {
         const errors = validationResult(req)
         if (!errors.isEmpty()) {
           return res.status(422).json({ errors: errors.array() })
@@ -380,12 +413,21 @@ module.exports = {
                 details.func_py = funct_py(func_name, no_of_args)
                 details.func_node = funct_node(func_name, no_of_args)
             }
-            const newchallenge = await Challenge.updateOne(
-                { name: challengename, createdBy: user._id },
-                { ...details },
-                { new: true }
-            )
-            res.json({ updatechallenge: newchallenge })
+            if(user === undefined) {
+                const newchallenge = await Challenge.updateOne(
+                    { name: challengename, createdBy: null },
+                    { ...details },
+                    { new: true }
+                )
+                res.json({ updatechallenge: newchallenge })
+            } else {
+                const newchallenge = await Challenge.updateOne(
+                    { name: challengename, createdBy: user._id },
+                    { ...details },
+                    { new: true }
+                )
+                res.json({ updatechallenge: newchallenge })
+            }
         }
         catch (err) {
             console.log(err.message)
@@ -425,6 +467,269 @@ module.exports = {
         catch (err) {
             console.log(err.message)
             res.send(err)
+        }
+    },
+
+    async testCaseUpdate(req, res){
+        try {
+            const user = req.user;
+            const challengeName = req.params.challenge;
+            const testCaseId = req.params.testCaseId;
+            const details = req.body;
+            const challenge = await Challenge.find({name: challengeName});
+    
+            if(user === undefined) {
+                const updatetestCase = await Testcase.updateOne(
+                    { challenge: challenge[0]._id, user: null, _id: testCaseId },
+                    { ...details },
+                    { new: true }
+                );
+                res.json({statusCode: 201, updatedtestCase: updatetestCase});
+            } else {
+                const updatetestCase = await Testcase.updateOne(
+                    { challenge: challenge[0]._id, user: user._id, _id: testCaseId },
+                    { ...details },
+                    { new: true }
+                );
+                res.json({statusCode: 201, updatedtestCase: updatetestCase});
+            }
+            
+        } catch (err) {
+            console.log(err.message);
+            res.send("Server Error");
+        }
+    },
+
+    async testCaseDelete(req, res){
+        try {
+            const user = req.user;
+            const challengeName = req.params.challenge;
+            const testCaseId = req.params.testCaseId;
+
+            const challenge = await Challenge.find({name: challengeName});
+            await Challenge.updateOne({ name: challengeName }, { $pull:  { testCases: testCaseId } })
+
+            if(user === undefined){
+                const deletetestCase = await Testcase.deleteOne(
+                    { challenge: challenge[0]._id, user: null, _id: testCaseId },
+                )
+                res.json({statusCode:201, deletetestCase: deletetestCase});
+            }
+            else {
+                const deletetestCase = await Testcase.deleteOne(
+                    { challenge: challenge[0]._id, user: user._id, _id: testCaseId },
+                )
+                res.json({statusCode:201, deletetestCase: deletetestCase});
+            }
+        } catch (err) {
+            console.log(err.message);
+            res.send("Server Error");
+        }
+    },
+
+    async contestUpdate(req,res){
+        try {
+            const contestName = req.params.contest;
+            const user = req.user;
+            const details = req.body;
+        
+            const contestUpdate = await Contest.updateOne(
+                { name: contestName, createdBy: user._id},
+                { ...details },
+                { new: true }
+            )
+            res.json({statusCode: 201, updatedContest: contestUpdate});
+        } catch (err) {
+            console.log(err.message)
+            res.send("Server Error");
+        }
+    },
+
+    async deleteChallenge(req, res) {
+        try {
+            const user = req.user
+            const challengeName = req.params.challenge
+
+            if(user === undefined) {
+
+                const challenge = await Challenge.find({ name: challengeName});
+
+                const submission = await Submission.find({ challenge: challenge[0]._id});
+
+                const discussion = await Discussion.find({ challenge: challenge[0]._id});
+
+                const deleteChallenge = await Challenge.deleteOne({ name: challengeName, createdBy: null});
+    
+                const deleteTestCase = await Testcase.deleteMany({ challenge: challenge[0]._id, user: null});
+    
+                const deleteDiscussion = await Discussion.deleteMany({ challenge: challenge[0]._id});
+    
+                const deleteSubmission = await Submission.deleteMany({ challenge: challenge[0]._id});
+
+                await User.updateMany(
+                    {bookmarks:challenge[0].id},
+                    { $pull: { bookmarks: challenge[0]._id }},
+                    { multi: true }
+                    ) 
+
+
+                const subsId = submission.map( el => el._id);
+                
+                const dicusId = discussion.map( el => el._id);
+
+                await User.updateMany(
+                    { },
+                    { $pull: { submissions: { $in : subsId }}},
+                    {multi: true}
+                )
+
+                await User.updateMany(
+                    { },
+                    { $pull: { discussions: { $in : dicusId }}},
+                    {multi: true}
+                )
+
+                res.send({challenge : deleteChallenge, deleteDiscussion, deleteSubmission, deleteTestCase});
+
+           } else {
+
+            const challenge = await Challenge.find({ name: challengeName});
+
+            const submission = await Submission.find({ challenge: challenge[0]._id});
+
+            const discussion = await Discussion.find({ challenge: challenge[0]._id});
+
+            const deleteChallenge = await Challenge.deleteOne({ name: challengeName, createdBy: user._id});
+
+            const deleteTestCase = await Testcase.deleteMany({ challenge: challenge[0]._id, user: user._id});
+
+            const deleteDiscussion = await Discussion.deleteMany({ challenge: challenge[0]._id, user: user._id});
+
+            const deleteSubmission = await Submission.deleteMany({ challenge: challenge[0]._id, user: user._id});
+
+            await User.updateOne({ _id: user._id }, { $pull: { challenge: challenge[0]._id } })
+
+            await User.updateMany(
+                {bookmarks:challenge[0].id},
+                { $pull: { bookmarks: challenge[0]._id }},
+                { multi: true }
+                ) 
+
+
+            const subsId = submission.map( el => el._id);
+            
+            const dicusId = discussion.map( el => el._id);
+
+            await User.updateMany(
+                { },
+                { $pull: { submissions: { $in : subsId }}},
+                {multi: true}
+            )
+
+            await User.updateMany(
+                { },
+                { $pull: { discussions: { $in : dicusId }}},
+                {multi: true}
+            )
+      
+            res.send({challenge : deleteChallenge, deleteDiscussion, deleteSubmission, deleteTestCase});
+
+           }
+            
+        } catch (err) {
+            console.log(err.message)
+            res.send("Server Error");
+        }
+    },
+
+    async deleteContestModerator(req, res) {
+        try {
+            const contestName = req.params.contest;
+
+            const username = req.params.username;
+
+            const contest = await Contest.find({name: contestName});
+
+            const user = await User.find({username: username});
+
+            await Contest.updateOne({ name: contestName }, { $pull: { moderators: user[0]._id } });
+
+            await User.updateOne({username: username}, {$pull: {moderator: contest[0]._id}});
+
+            res.send(`${username} is removed as moderator for the contest ${contestName}`);
+
+        } catch (err) {
+            console.log(err.message)
+            res.send("Server Error")
+        }
+    },
+
+    async deleteContest(req, res) {
+        try {
+            const contestName = req.params.contest;
+            const user = req.user;
+
+            const contest = await Contest.find({name: contestName});
+
+            const challenge = await Challenge.find({contest: contest[0]._id});
+
+            if(challenge.length === 0) {
+
+                await User.updateMany({ }, {$pull: { moderator:  contest[0]._id}});
+
+                await User.updateMany({ }, {$pull: {contests: contest[0]._id}});
+
+                const deleteContest = await Contest.deleteOne({name: contestName});
+
+                res.json({deleteContest});
+            
+            } else {
+               
+                const submission = await Submission.find({ challenge: challenge[0]._id});
+
+                const discussion = await Discussion.find({ challenge: challenge[0]._id});
+
+                const deleteChallenge = await Challenge.deleteOne({ name: challenge[0].name, createdBy: user._id, contest: contest[0]._id});
+
+                const deleteDiscussion = await Discussion.deleteMany({ challenge: challenge[0]._id});
+
+                const deleteSubmission = await Submission.deleteMany({ challenge: challenge[0]._id});
+
+                const deleteContest = await Contest.deleteOne({name: contestName});
+
+                await User.updateMany(
+                    {bookmarks:challenge[0].id},
+                    { $pull: { bookmarks: challenge[0]._id }},
+                    { multi: true }
+                    ) 
+    
+    
+                const subsId = submission.map( el => el._id);
+                
+                const dicusId = discussion.map( el => el._id);
+    
+                await User.updateMany(
+                    { },
+                    { $pull: { submissions: { $in : subsId }}},
+                    {multi: true}
+                )
+    
+                await User.updateMany(
+                    { },
+                    { $pull: { discussions: { $in : dicusId }}},
+                    {multi: true}
+                )
+
+                await User.updateMany({ }, {$pull: { moderator:  contest[0]._id}});
+
+                await User.updateMany({ }, {$pull: {contests: contest[0]._id}});
+
+                res.json({challenge : deleteChallenge, deleteDiscussion, deleteSubmission, deleteContest});
+                
+            }
+        } catch (err) {
+            console.log(err.message);
+            res.send("Server Error");
         }
     }
 
