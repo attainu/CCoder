@@ -4,7 +4,7 @@ const Challenge = require("../models/Challenge");
 const Submission = require('../models/Submission');
 const User = require('../models/User');
 const Contest = require('../models/Contest');
-const { validationResult}=require("express-validator")
+const { validationResult } = require("express-validator")
 
 
 
@@ -15,7 +15,7 @@ module.exports = {
     async challenge(req, res) {
         const errors = validationResult(req)
         if (!errors.isEmpty()) {
-          return res.status(422).json({ errors: errors.array() })
+            return res.status(422).json({ errors: errors.array() })
         }
         try {
             const funct_node = (name, no_of_args) => {
@@ -42,19 +42,72 @@ module.exports = {
         `
                 return func
             }
+            const funct_c = (no_of_args, input, output) => {
+                const func = `#include<stdio.h>
+/**
+* Complete this method
+* I will be sending ${no_of_args} input
+* sample ${input} so use symbol in scanf according to the sample.
+* Sample output should be like this ${output} 
+*/
+void main()
+{    
+  
+    scanf("");
+    printf("",result);
+    return 0;
+}`
+                return func
+            }
+            const funct_cpp = (no_of_args, input, output) => {
+                const func = `#include <iostream>
+using namespace std;
+// Complete this method
+// I will be sending ${no_of_args} arguements as input
+// sample input :${input}
+// Sample output: ${output} 
+
+int main()
+{
+    int a, b;
+    // All the required Input Should be taken in single Statement
+    cin >> b >> a;
+    sumOfTwoNumbers = firstNumber + secondNumber;
+    // Only One Print Statement Should be used
+    cout << ;     
+
+    return 0;
+}`
+                return func
+            }
+            const funct_java = (no_of_args, input, output) => {
+                const func = `import java.util.*;
+public class Solution {
+    // Complete this method
+    // I will be sending ${no_of_args} input so use ${no_of_args} inputs
+    // sample input: ${input} .
+    // Sample output : ${output} 
+    public static void main(String[] args) {
+      Scanner sc=new Scanner(System.in);
+      
+      System.out.println();
+    }
+}`
+                return func
+            }
             const user = req.user
-            const { name, description, question, output, editorial, maxScore, func_name, no_of_args } = req.body;
+            const { name, description, question, input, output, editorial, maxScore, func_name, no_of_args } = req.body;
             const func_py = funct_py(func_name, no_of_args)
             const func_node = funct_node(func_name, no_of_args)
-            const func_java = 'not defined'
-            const func_c = 'not defined'
-            const func_cpp = 'not defined'
+            const func_java = funct_java(no_of_args, input, output)
+            const func_c = funct_c(no_of_args, input, output)
+            const func_cpp = funct_cpp(no_of_args, input, output)
             if (user === undefined) {
-                const challenge = await Challenge.create({ name, description, question, output, editorial, maxScore, func_name, no_of_args, func_py, func_node, func_java, func_c, func_cpp });
+                const challenge = await Challenge.create({ name, description, question, input, output, editorial, maxScore, func_name, no_of_args, func_py, func_node, func_java, func_c, func_cpp });
                 res.status(201).json({ status: 201, challenge: challenge });
             }
             else {
-                const challenge = await Challenge.create({ name, description, question, output, editorial, maxScore, createdBy: user._id, func_name, no_of_args, func_py, func_node, func_java, func_c, func_cpp });
+                const challenge = await Challenge.create({ name, description, question, input, output, editorial, maxScore, createdBy: user._id, func_name, no_of_args, func_py, func_node, func_java, func_c, func_cpp });
                 user.challenge.push(challenge._id)
                 await user.save()
                 res.status(201).json({ status: 201, challenge: challenge, createdBy: user._id });
@@ -74,7 +127,8 @@ module.exports = {
         try {
             const user = req.user
             const challengename = req.params.challenge
-            if(user === undefined){
+            if (user === undefined) {
+
                 let challenge = await Challenge.find({ name: challengename, createdBy: null })
                 let { result, input } = req.body
                 let func = challenge[0].func_name
@@ -93,15 +147,16 @@ module.exports = {
                 }
                 let testCase = 0
                 if (typeof (input) == 'string') {
-                    testCase = await Testcase.create({ result, input: `${func}(${newinput})`, challenge: challenge[0]._id });
+                    testCase = await Testcase.create({ rawinput: newinput, result, input: `${func}(${newinput})`, challenge: challenge[0]._id });
                 }
                 else {
-                    testCase = await Testcase.create({ result, input: `${func}(${newinput})`, challenge: challenge[0]._id });
+                    testCase = await Testcase.create({ rawinput: newinput, result, input: `${func}(${newinput})`, challenge: challenge[0]._id });
                 }
-    
+
                 challenge[0].testCases.push(testCase)
                 await challenge[0].save()
                 res.status(201).json({ statuscode: 201, testCase: testCase })
+
             } else {
                 let challenge = await Challenge.find({ name: challengename, createdBy: user._id })
                 let { result, input } = req.body
@@ -121,12 +176,12 @@ module.exports = {
                 }
                 let testCase = 0
                 if (typeof (input) == 'string') {
-                    testCase = await Testcase.create({ result, input: `${func}(${newinput})`, challenge: challenge[0]._id, user: user._id});
+                    testCase = await Testcase.create({ rawinput: newinput, result, input: `${func}(${newinput})`, challenge: challenge[0]._id, user: user._id });
                 }
                 else {
-                    testCase = await Testcase.create({ result, input: `${func}(${newinput})`, challenge: challenge[0]._id, user: user._id });
+                    testCase = await Testcase.create({ rawinput: newinput, result, input: `${func}(${newinput})`, challenge: challenge[0]._id, user: user._id });
                 }
-    
+
                 challenge[0].testCases.push(testCase)
                 await challenge[0].save()
                 res.status(201).json({ statuscode: 201, testCase: testCase })
@@ -156,12 +211,7 @@ module.exports = {
                     const input = '\n' + challenge[0].testCases[i].input
                     const newcode = code + input
                     const result = await python.runSource(newcode);
-                    if (code.includes('\n') == false) {
-                        result.stdout = result.stdout.replace('\n', '')
-                    }
-                    else if (code.includes('\n')) {
-                        result.stdout = result.stdout.slice(0, -1)
-                    }
+                    result.stdout = result.stdout.slice(0, -1)
                     if (result.stderr.length != 0) console.log(result.stderr)
                     else if (result.stdout == challenge[0].testCases[i].result) {
                         score = score + scorepertc
@@ -181,16 +231,71 @@ module.exports = {
                 for (i = 0; i < challenge[0].testCases.length; i++) {
                     const input = '\n' + challenge[0].testCases[i].input
                     const newcode = code + input
-
                     const result = await node.runSource(newcode);
-                    if (code.includes('\n') == false) {
-                        result.stdout = result.stdout.replace(/\n/g, '')
-                    }
-                    else if (code.includes('\n')) {
-                        result.stdout = result.stdout.slice(0, -1)
-                    }
-
+                    result.stdout = result.stdout.slice(0, -1)
                     if (result.stderr.length != 0) console.log(result.stderr)
+                    else if (result.stdout == challenge[0].testCases[i].result) {
+                        score = score + scorepertc
+                    }
+                    else {
+                        score = score
+                    }
+                }
+
+                const submission = await Submission.create({ code: code, score: score, challenge: challenge[0]._id, user: user._id, language: language });
+                challenge[0].submissions.push(submission)
+                await challenge[0].save()
+                user.submissions.push(submission);
+                await user.save()
+                res.json({ score: score })
+            }
+            else if (language == 'c') {
+                for (i = 0; i < challenge[0].testCases.length; i++) {
+                    let input = challenge[0].testCases[i].rawinput
+                    input = input.replace(',', '\n')
+                    const result = await c.runSource(code, { stdin: input });
+                    if (result.stderr.length != 0) console.log('yes' + result.stderr)
+                    else if (result.stdout == challenge[0].testCases[i].result) {
+                        score = score + scorepertc
+                    }
+                    else {
+                        score = score
+                    }
+                }
+                const submission = await Submission.create({ code: code, score: score, challenge: challenge[0]._id, user: user._id, language: language });
+                challenge[0].submissions.push(submission)
+                await challenge[0].save()
+                user.submissions.push(submission);
+                await user.save()
+                res.json({ score: score })
+            }
+            else if (language == 'c++') {
+                for (i = 0; i < challenge[0].testCases.length; i++) {
+                    let input = challenge[0].testCases[i].rawinput
+                    input = input.replace(',', '\n')
+                    const result = await cpp.runSource(code, { stdin: input });
+                    if (result.stderr.length != 0) console.log('yes' + result.stderr)
+                    else if (result.stdout == challenge[0].testCases[i].result) {
+                        score = score + scorepertc
+                    }
+                    else {
+                        score = score
+                    }
+                }
+                const submission = await Submission.create({ code: code, score: score, challenge: challenge[0]._id, user: user._id, language: language });
+                challenge[0].submissions.push(submission)
+                await challenge[0].save()
+                user.submissions.push(submission);
+                await user.save()
+                res.json({ score: score })
+            }
+            else if (language == 'java') {
+                for (i = 0; i < challenge[0].testCases.length; i++) {
+                    let input = challenge[0].testCases[i].rawinput
+                    input = input.replace(',', '\n')
+                    const result = await java.runSource(code, { stdin: input });
+                    result.stdout = result.stdout.slice(0, -1)
+                    if (result.stderr.length != 0) console.log('yes' + result.stderr)
                     else if (result.stdout == challenge[0].testCases[i].result) {
                         score = score + scorepertc
                     }
@@ -308,8 +413,8 @@ module.exports = {
             const func_node = challenge[0].func_node
             const func_name = challenge[0].func_name
             const func_java = 'not defined'
-            const func_c = 'not defined'
-            const func_cpp = 'not defined'
+            const func_c = challenge[0].func_c
+            const func_cpp = challenge[0].func_cpp
             const description = challenge[0].description;
             const output = challenge[0].output;
             const testCase = challenge[0].testCases;
@@ -317,7 +422,7 @@ module.exports = {
             const maxScore = challenge[0].maxScore;
             const no_of_args = challenge[0].no_of_args
 
-            const challengeCreation = await Challenge.create({ name, description, question, output, editorial, maxScore, func_name, func_py, func_node, func_java, func_c, func_cpp,no_of_args, testCases: testCase, createdBy: user._id, contest: contest[0]._id })
+            const challengeCreation = await Challenge.create({ name, description, question, output, editorial, maxScore, func_name, func_py, func_node, func_java, func_c, func_cpp, no_of_args, testCases: testCase, createdBy: user._id, contest: contest[0]._id })
             contest[0].challenges.push(challengeCreation)
             contest[0].save()
             res.json({ challenge: challengeCreation })
@@ -347,9 +452,10 @@ module.exports = {
     async challengeLeaderboard(req, res) {
         try {
             const challengename = req.params.challenge
-            let challenges = await Challenge.find({ name: challengename }).populate({ path: 'submissions', options: { sort: { 'score': -1 } } })
-            let submissions = challenges[0].submissions.map(el => {
-                const user = el.user
+            let challenges = await Challenge.find({ name: challengename })
+            let submission = await Submission.find({ challenge: challenges[0]._id }).sort({ 'score': -1 }).populate('user')
+            let submissions = submission.map(el => {
+                const user = el.user.username
                 const score = el.score
                 return { user: user, score: score, language: el.language }
             })
@@ -363,17 +469,16 @@ module.exports = {
             });
 
             res.json({ sub: newSubmission })
-
-            res.status(201).json(add)
-        } catch (err) {
+        }
+        catch (err) {
             console.log(err.message)
-            res.status(500).send("Server Error");
+            res.status(501).send("Server Error");
         }
     },
     async updateChallenge(req, res) {
         const errors = validationResult(req)
         if (!errors.isEmpty()) {
-          return res.status(422).json({ errors: errors.array() })
+            return res.status(422).json({ errors: errors.array() })
         }
         try {
             const funct_node = (name, no_of_args) => {
@@ -400,6 +505,59 @@ module.exports = {
     `
                 return func
             }
+            const funct_c = (no_of_args, input, output) => {
+                const func = `#include<stdio.h>
+              /**
+              * Complete this method
+              * I will be sending ${no_of_args} input
+              * sample ${input} so use symbol in scanf according to the sample.
+              * Sample output should be like this ${output} 
+              */
+              void main()
+              {    
+                
+                  scanf("");
+                  printf("",result);
+                  return 0;
+              }`
+                return func
+            }
+            const funct_cpp = (no_of_args, input, output) => {
+                const func = `#include <iostream>
+              using namespace std;
+              // Complete this method
+              // I will be sending ${no_of_args} arguements as input
+              // sample input :${input}
+              // Sample output: ${output} 
+              
+              int main()
+              {
+                  int a, b;
+                  // All the required Input Should be taken in single Statement
+                  cin >> b >> a;
+                  sumOfTwoNumbers = firstNumber + secondNumber;
+                  // Only One Print Statement Should be used
+                  cout << ;     
+              
+                  return 0;
+              }`
+                return func
+            }
+            const funct_java = (no_of_args, input, output) => {
+                const func = `import java.util.*;
+public class Solution {
+    // Complete this method
+    // I will be sending ${no_of_args} input so use ${no_of_args} inputs
+    // sample input: ${input} .
+    // Sample output : ${output} 
+    public static void main(String[] args) {
+      Scanner sc=new Scanner(System.in);
+      
+      System.out.println();
+    }
+}`
+                return func
+            }
             const user = req.user
             const challengename = req.params.challenge
             const details = req.body
@@ -409,11 +567,21 @@ module.exports = {
                 if (details.hasOwnProperty('no_of_args') == false) {
                     details.no_of_args = challenge[0].no_of_args
                 }
-                const { func_name, no_of_args } = details
+                if (details.hasOwnProperty('input') == false) {
+                    details.input = challenge[0].input
+                }
+                if (details.hasOwnProperty('output') == false) {
+                    details.output = challenge[0].output
+                }
+                const { func_name, no_of_args, input, output } = details
                 details.func_py = funct_py(func_name, no_of_args)
                 details.func_node = funct_node(func_name, no_of_args)
+                details.func_c = funct_c(no_of_args, input, output)
+                details.func_cpp = funct_cpp(no_of_args, input, output)
+                details.func_java = funct_java(no_of_args, input, output)
+
             }
-            if(user === undefined) {
+            if (user === undefined) {
                 const newchallenge = await Challenge.updateOne(
                     { name: challengename, createdBy: null },
                     { ...details },
@@ -470,56 +638,56 @@ module.exports = {
         }
     },
 
-    async testCaseUpdate(req, res){
+    async testCaseUpdate(req, res) {
         try {
             const user = req.user;
             const challengeName = req.params.challenge;
             const testCaseId = req.params.testCaseId;
             const details = req.body;
-            const challenge = await Challenge.find({name: challengeName});
-    
-            if(user === undefined) {
+            const challenge = await Challenge.find({ name: challengeName });
+
+            if (user === undefined) {
                 const updatetestCase = await Testcase.updateOne(
                     { challenge: challenge[0]._id, user: null, _id: testCaseId },
                     { ...details },
                     { new: true }
                 );
-                res.json({statusCode: 201, updatedtestCase: updatetestCase});
+                res.json({ statusCode: 201, updatedtestCase: updatetestCase });
             } else {
                 const updatetestCase = await Testcase.updateOne(
                     { challenge: challenge[0]._id, user: user._id, _id: testCaseId },
                     { ...details },
                     { new: true }
                 );
-                res.json({statusCode: 201, updatedtestCase: updatetestCase});
+                res.json({ statusCode: 201, updatedtestCase: updatetestCase });
             }
-            
+
         } catch (err) {
             console.log(err.message);
             res.send("Server Error");
         }
     },
 
-    async testCaseDelete(req, res){
+    async testCaseDelete(req, res) {
         try {
             const user = req.user;
             const challengeName = req.params.challenge;
             const testCaseId = req.params.testCaseId;
 
-            const challenge = await Challenge.find({name: challengeName});
-            await Challenge.updateOne({ name: challengeName }, { $pull:  { testCases: testCaseId } })
+            const challenge = await Challenge.find({ name: challengeName });
+            await Challenge.updateOne({ name: challengeName }, { $pull: { testCases: testCaseId } })
 
-            if(user === undefined){
+            if (user === undefined) {
                 const deletetestCase = await Testcase.deleteOne(
                     { challenge: challenge[0]._id, user: null, _id: testCaseId },
                 )
-                res.json({statusCode:201, deletetestCase: deletetestCase});
+                res.json({ statusCode: 201, deletetestCase: deletetestCase });
             }
             else {
                 const deletetestCase = await Testcase.deleteOne(
                     { challenge: challenge[0]._id, user: user._id, _id: testCaseId },
                 )
-                res.json({statusCode:201, deletetestCase: deletetestCase});
+                res.json({ statusCode: 201, deletetestCase: deletetestCase });
             }
         } catch (err) {
             console.log(err.message);
@@ -527,18 +695,18 @@ module.exports = {
         }
     },
 
-    async contestUpdate(req,res){
+    async contestUpdate(req, res) {
         try {
             const contestName = req.params.contest;
             const user = req.user;
             const details = req.body;
-        
+
             const contestUpdate = await Contest.updateOne(
-                { name: contestName, createdBy: user._id},
+                { name: contestName, createdBy: user._id },
                 { ...details },
                 { new: true }
             )
-            res.json({statusCode: 201, updatedContest: contestUpdate});
+            res.json({ statusCode: 201, updatedContest: contestUpdate });
         } catch (err) {
             console.log(err.message)
             res.send("Server Error");
@@ -550,92 +718,92 @@ module.exports = {
             const user = req.user
             const challengeName = req.params.challenge
 
-            if(user === undefined) {
+            if (user === undefined) {
 
-                const challenge = await Challenge.find({ name: challengeName});
+                const challenge = await Challenge.find({ name: challengeName });
 
-                const submission = await Submission.find({ challenge: challenge[0]._id});
+                const submission = await Submission.find({ challenge: challenge[0]._id });
 
-                const discussion = await Discussion.find({ challenge: challenge[0]._id});
+                const discussion = await Discussion.find({ challenge: challenge[0]._id });
 
-                const deleteChallenge = await Challenge.deleteOne({ name: challengeName, createdBy: null});
-    
-                const deleteTestCase = await Testcase.deleteMany({ challenge: challenge[0]._id, user: null});
-    
-                const deleteDiscussion = await Discussion.deleteMany({ challenge: challenge[0]._id});
-    
-                const deleteSubmission = await Submission.deleteMany({ challenge: challenge[0]._id});
+                const deleteChallenge = await Challenge.deleteOne({ name: challengeName, createdBy: null });
+
+                const deleteTestCase = await Testcase.deleteMany({ challenge: challenge[0]._id, user: null });
+
+                const deleteDiscussion = await Discussion.deleteMany({ challenge: challenge[0]._id });
+
+                const deleteSubmission = await Submission.deleteMany({ challenge: challenge[0]._id });
 
                 await User.updateMany(
-                    {bookmarks:challenge[0].id},
-                    { $pull: { bookmarks: challenge[0]._id }},
+                    { bookmarks: challenge[0].id },
+                    { $pull: { bookmarks: challenge[0]._id } },
                     { multi: true }
-                    ) 
+                )
 
 
-                const subsId = submission.map( el => el._id);
-                
-                const dicusId = discussion.map( el => el._id);
+                const subsId = submission.map(el => el._id);
+
+                const dicusId = discussion.map(el => el._id);
 
                 await User.updateMany(
-                    { },
-                    { $pull: { submissions: { $in : subsId }}},
-                    {multi: true}
+                    {},
+                    { $pull: { submissions: { $in: subsId } } },
+                    { multi: true }
                 )
 
                 await User.updateMany(
-                    { },
-                    { $pull: { discussions: { $in : dicusId }}},
-                    {multi: true}
+                    {},
+                    { $pull: { discussions: { $in: dicusId } } },
+                    { multi: true }
                 )
 
-                res.send({challenge : deleteChallenge, deleteDiscussion, deleteSubmission, deleteTestCase});
+                res.send({ challenge: deleteChallenge, deleteDiscussion, deleteSubmission, deleteTestCase });
 
-           } else {
+            } else {
 
-            const challenge = await Challenge.find({ name: challengeName});
+                const challenge = await Challenge.find({ name: challengeName });
 
-            const submission = await Submission.find({ challenge: challenge[0]._id});
+                const submission = await Submission.find({ challenge: challenge[0]._id });
 
-            const discussion = await Discussion.find({ challenge: challenge[0]._id});
+                const discussion = await Discussion.find({ challenge: challenge[0]._id });
 
-            const deleteChallenge = await Challenge.deleteOne({ name: challengeName, createdBy: user._id});
+                const deleteChallenge = await Challenge.deleteOne({ name: challengeName, createdBy: user._id });
 
-            const deleteTestCase = await Testcase.deleteMany({ challenge: challenge[0]._id, user: user._id});
+                const deleteTestCase = await Testcase.deleteMany({ challenge: challenge[0]._id, user: user._id });
 
-            const deleteDiscussion = await Discussion.deleteMany({ challenge: challenge[0]._id, user: user._id});
+                const deleteDiscussion = await Discussion.deleteMany({ challenge: challenge[0]._id, user: user._id });
 
-            const deleteSubmission = await Submission.deleteMany({ challenge: challenge[0]._id, user: user._id});
+                const deleteSubmission = await Submission.deleteMany({ challenge: challenge[0]._id, user: user._id });
 
-            await User.updateOne({ _id: user._id }, { $pull: { challenge: challenge[0]._id } })
+                await User.updateOne({ _id: user._id }, { $pull: { challenge: challenge[0]._id } })
 
-            await User.updateMany(
-                {bookmarks:challenge[0].id},
-                { $pull: { bookmarks: challenge[0]._id }},
-                { multi: true }
-                ) 
+                await User.updateMany(
+                    { bookmarks: challenge[0].id },
+                    { $pull: { bookmarks: challenge[0]._id } },
+                    { multi: true }
+                )
 
 
-            const subsId = submission.map( el => el._id);
-            
-            const dicusId = discussion.map( el => el._id);
+                const subsId = submission.map(el => el._id);
 
-            await User.updateMany(
-                { },
-                { $pull: { submissions: { $in : subsId }}},
-                {multi: true}
-            )
+                const dicusId = discussion.map(el => el._id);
 
-            await User.updateMany(
-                { },
-                { $pull: { discussions: { $in : dicusId }}},
-                {multi: true}
-            )
-      
-            res.send({challenge : deleteChallenge, deleteDiscussion, deleteSubmission, deleteTestCase});
+                await User.updateMany(
+                    {},
+                    { $pull: { submissions: { $in: subsId } } },
+                    { multi: true }
+                )
 
-           }
-            
+                await User.updateMany(
+                    {},
+                    { $pull: { discussions: { $in: dicusId } } },
+                    { multi: true }
+                )
+
+                res.send({ challenge: deleteChallenge, deleteDiscussion, deleteSubmission, deleteTestCase });
+
+            }
+
         } catch (err) {
             console.log(err.message)
             res.send("Server Error");
@@ -648,13 +816,13 @@ module.exports = {
 
             const username = req.params.username;
 
-            const contest = await Contest.find({name: contestName});
+            const contest = await Contest.find({ name: contestName });
 
-            const user = await User.find({username: username});
+            const user = await User.find({ username: username });
 
             await Contest.updateOne({ name: contestName }, { $pull: { moderators: user[0]._id } });
 
-            await User.updateOne({username: username}, {$pull: {moderator: contest[0]._id}});
+            await User.updateOne({ username: username }, { $pull: { moderator: contest[0]._id } });
 
             res.send(`${username} is removed as moderator for the contest ${contestName}`);
 
@@ -669,63 +837,63 @@ module.exports = {
             const contestName = req.params.contest;
             const user = req.user;
 
-            const contest = await Contest.find({name: contestName});
+            const contest = await Contest.find({ name: contestName });
 
-            const challenge = await Challenge.find({contest: contest[0]._id});
+            const challenge = await Challenge.find({ contest: contest[0]._id });
 
-            if(challenge.length === 0) {
+            if (challenge.length === 0) {
 
-                await User.updateMany({ }, {$pull: { moderator:  contest[0]._id}});
+                await User.updateMany({}, { $pull: { moderator: contest[0]._id } });
 
-                await User.updateMany({ }, {$pull: {contests: contest[0]._id}});
+                await User.updateMany({}, { $pull: { contests: contest[0]._id } });
 
-                const deleteContest = await Contest.deleteOne({name: contestName});
+                const deleteContest = await Contest.deleteOne({ name: contestName });
 
-                res.json({deleteContest});
-            
+                res.json({ deleteContest });
+
             } else {
-               
-                const submission = await Submission.find({ challenge: challenge[0]._id});
 
-                const discussion = await Discussion.find({ challenge: challenge[0]._id});
+                const submission = await Submission.find({ challenge: challenge[0]._id });
 
-                const deleteChallenge = await Challenge.deleteOne({ name: challenge[0].name, createdBy: user._id, contest: contest[0]._id});
+                const discussion = await Discussion.find({ challenge: challenge[0]._id });
 
-                const deleteDiscussion = await Discussion.deleteMany({ challenge: challenge[0]._id});
+                const deleteChallenge = await Challenge.deleteOne({ name: challenge[0].name, createdBy: user._id, contest: contest[0]._id });
 
-                const deleteSubmission = await Submission.deleteMany({ challenge: challenge[0]._id});
+                const deleteDiscussion = await Discussion.deleteMany({ challenge: challenge[0]._id });
 
-                const deleteContest = await Contest.deleteOne({name: contestName});
+                const deleteSubmission = await Submission.deleteMany({ challenge: challenge[0]._id });
+
+                const deleteContest = await Contest.deleteOne({ name: contestName });
 
                 await User.updateMany(
-                    {bookmarks:challenge[0].id},
-                    { $pull: { bookmarks: challenge[0]._id }},
+                    { bookmarks: challenge[0].id },
+                    { $pull: { bookmarks: challenge[0]._id } },
                     { multi: true }
-                    ) 
-    
-    
-                const subsId = submission.map( el => el._id);
-                
-                const dicusId = discussion.map( el => el._id);
-    
-                await User.updateMany(
-                    { },
-                    { $pull: { submissions: { $in : subsId }}},
-                    {multi: true}
-                )
-    
-                await User.updateMany(
-                    { },
-                    { $pull: { discussions: { $in : dicusId }}},
-                    {multi: true}
                 )
 
-                await User.updateMany({ }, {$pull: { moderator:  contest[0]._id}});
 
-                await User.updateMany({ }, {$pull: {contests: contest[0]._id}});
+                const subsId = submission.map(el => el._id);
 
-                res.json({challenge : deleteChallenge, deleteDiscussion, deleteSubmission, deleteContest});
-                
+                const dicusId = discussion.map(el => el._id);
+
+                await User.updateMany(
+                    {},
+                    { $pull: { submissions: { $in: subsId } } },
+                    { multi: true }
+                )
+
+                await User.updateMany(
+                    {},
+                    { $pull: { discussions: { $in: dicusId } } },
+                    { multi: true }
+                )
+
+                await User.updateMany({}, { $pull: { moderator: contest[0]._id } });
+
+                await User.updateMany({}, { $pull: { contests: contest[0]._id } });
+
+                res.json({ challenge: deleteChallenge, deleteDiscussion, deleteSubmission, deleteContest });
+
             }
         } catch (err) {
             console.log(err.message);
