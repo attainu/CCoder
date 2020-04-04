@@ -5,13 +5,14 @@ const cookieParser = require("cookie-parser");
 const cors = require("cors");
 dotenv.config();
 require("./db");
-require("./passport");
+require("./utils/passport");
 
 const userRoutes = require('./routes/userRoutes');
 const apiRoutes = require("./routes/apiRoutes");
 
 // Init
 const app = express();
+app.use(express.urlencoded({ extended : true }));
 app.use(express.json());
 app.use(cookieParser());
 app.use(
