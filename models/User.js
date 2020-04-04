@@ -4,7 +4,7 @@ const { sign, verify } = require("jsonwebtoken");
 const sendMail = require("../utils/mailer");
 const Schema = mongoose.Schema;
 
-
+// Schema for userS
 const userSchema = new Schema(
     {
         name: {
@@ -98,6 +98,7 @@ const userSchema = new Schema(
     { timestamps: true}
 );
 
+//static method to find user by email and password
 userSchema.statics.findByEmailAndPassword = async (email, password) => {
     try {
         const user = await User.findOne({ email: email});
@@ -144,6 +145,7 @@ userSchema.methods.regenerateAuthToken = async function() {
     return token
 }
 
+//static method to null the accessToken of the user
 userSchema.statics.nullifyToken = async (token) => {
     try {
         const user = await User.findOne({accessToken: token})
@@ -155,6 +157,8 @@ userSchema.statics.nullifyToken = async (token) => {
         console.log(err.message)   
     }
 }
+
+//static method to find user by password
 
 userSchema.statics.findByPassword = async (accessToken, oldpassword) => {
     try {

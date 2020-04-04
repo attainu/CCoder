@@ -6,6 +6,8 @@ const cloudinary = require("../utils/cloudinary");
 const convertBufferToString = require("../utils/convertBufferToString");
 
 module.exports = {
+    //@desc:For registering user
+    //@access:PUBLIC
     async userRegister(req, res) {
         const errors = validationResult(req)
             if (!errors.isEmpty()) {
@@ -64,6 +66,8 @@ module.exports = {
         }
     },
 
+    //@desc:For user logout
+    //@access:Private
     async userLogout (req,res){
         try {
             const token = req.params.token
@@ -77,10 +81,14 @@ module.exports = {
         
     },
 
+    //@desc:For user details
+    //@access:private
     async singleUser(req, res){
         res.json(req.user)
     },
 
+    //@desc:For user profile update
+    //@access:PRIVATE
     async userProfileUpdate(req, res){
         const errors = validationResult(req)
         if (!errors.isEmpty()) {
@@ -200,6 +208,8 @@ module.exports = {
         res.send("Received");
       },
 
+    //@desc:For github login
+    //@access:PUBLIC
       async fetchUserFromGithub(req, res) {
         const user = req.user;
         const accessToken = await user.generateAuthToken("confirm");
