@@ -12,10 +12,13 @@ const { c, cpp, node, python, java } = require('compile-run');
 
 
 module.exports = {
+
+    //@access: private;
+    //@desc: Creating user defined challenge
     async challenge(req, res) {
         const errors = validationResult(req)
         if (!errors.isEmpty()) {
-            return res.status(422).json({ errors: errors.array() })
+            return res.statusCode(422).json({ errors: errors.array() })
         }
         try {
             const funct_node = (name, no_of_args) => {
@@ -104,6 +107,7 @@ public class Solution {
             const func_cpp = funct_cpp(no_of_args, input, output)
             if (user === undefined) {
                 const challenge = await Challenge.create({ name, description, question, input, output, editorial, maxScore, func_name, no_of_args, func_py, func_node, func_java, func_c, func_cpp });
+
                 res.status(201).json({ status: 201, challenge: challenge });
             }
             else {
@@ -117,20 +121,31 @@ public class Solution {
         } catch (err) {
             console.log(err.message);
             if (err.message === 'Mongo Error') {
-                res.status(400).send("Problem Name Should be Different");
-            } else {
-                res.status(500).send("Server Error");
+                res.status(409).send("Problem Name Should be Different");
+            }
+            else if (err.code == 11000) {
+                res.status(422).send("Bad Request")
+            }
+            else {
+                res.status(500).send('Server Error')
             }
         }
     },
+
+    //@access:private
+    //@desc : For Adding Test case for challenge
     async testCase(req, res) {
+        const errors = validationResult(req)
+        if (!errors.isEmpty()) {
+            return res.status(422).json({ errors: errors.array() })
+        }
         try {
             const user = req.user
+            let { result, input } = req.body
             const challengename = req.params.challenge
             if (user === undefined) {
 
                 let challenge = await Challenge.find({ name: challengename, createdBy: null })
-                let { result, input } = req.body
                 let func = challenge[0].func_name
                 input = input.split(",")
                 let newinput = [];
@@ -147,19 +162,21 @@ public class Solution {
                 }
                 let testCase = 0
                 if (typeof (input) == 'string') {
-                    testCase = await Testcase.create({ rawinput: newinput, result, input: `${func}(${newinput})`, challenge: challenge[0]._id });
+                    testCase = await Testcase.create({ rawinput: `${newinput}`, result, input: `${func}(${newinput})`, challenge: challenge[0]._id });
                 }
                 else {
-                    testCase = await Testcase.create({ rawinput: newinput, result, input: `${func}(${newinput})`, challenge: challenge[0]._id });
+                    testCase = await Testcase.create({ rawinput: `${newinput}`, result, input: `${func}(${newinput})`, challenge: challenge[0]._id });
                 }
 
                 challenge[0].testCases.push(testCase)
                 await challenge[0].save()
                 res.status(201).json({ statuscode: 201, testCase: testCase })
 
-            } else {
+            } else {new note
                 let challenge = await Challenge.find({ name: challengename, createdBy: user._id })
-                let { result, input } = req.body
+                if (challenge.length == 0) {
+                    throw new Error('Invalid Challenge')
+                }
                 let func = challenge[0].func_name
                 input = input.split(",")
                 let newinput = [];
@@ -176,10 +193,10 @@ public class Solution {
                 }
                 let testCase = 0
                 if (typeof (input) == 'string') {
-                    testCase = await Testcase.create({ rawinput: newinput, result, input: `${func}(${newinput})`, challenge: challenge[0]._id, user: user._id });
+                    testCase = await Testcase.create({ rawinput: `${newinput}`, result, input: `${func}(${newinput})`, challenge: challenge[0]._id, user: user._id });
                 }
                 else {
-                    testCase = await Testcase.create({ rawinput: newinput, result, input: `${func}(${newinput})`, challenge: challenge[0]._id, user: user._id });
+                    testCase = await Testcase.create({ rawinput: `${newinput}`, result, input: `${func}(${newinput})`, challenge: challenge[0]._id, user: user._id });
                 }
 
                 challenge[0].testCases.push(testCase)
@@ -190,10 +207,23 @@ public class Solution {
         }
         catch (err) {
             console.log(err)
-            res.status(500).send("Server Error");
+            if (err.message == 'Invalid Challenge') {
+                res.status(403).send(err.message)
+            }
+            else {
+                res.status(500).send('Server Error');
+            }
         }
     },
+
+
+    //@desc:For Compiling and submitting code for a challenge
+    //@access:PRIVATE
     async submission(req, res) {
+        const errors = validationResult(req)
+        if (!errors.isEmpty()) {
+            return res.status(422).json({ errors: errors.array() })
+        }
         try {
             const user = req.user;
             const { language, code } = req.body
@@ -316,6 +346,9 @@ public class Solution {
             res.status(500).send(err)
         }
     },
+
+    //@desc:For Replying on the discussion Section of a challenge
+    //@access:PRIVATE    
     async challengeDiscussion(req, res) {
         try {
             const challengename = req.params.challenge
@@ -337,7 +370,14 @@ public class Solution {
             res.status(500).send('Server Error')
         }
     },
+
+    //@desc:FOR ORGANIZING A CONTEST
+    //@access:PRIVATE
     async contest(req, res) {
+        const errors = validationResult(req)
+        if (!errors.isEmpty()) {
+            return res.status(422).json({ errors: errors.array() })
+        }
         try {
             const details = req.body
             const user = req.user;
@@ -350,15 +390,27 @@ public class Solution {
 
         }
         catch (err) {
-            console.log(err.message)
-            res.status(500).send('Server Error')
+            console.log(err)
+            if (err.code == 11000) {
+                res.status(409).send("Duplicate Values")
+            }
+            else {
+                res.status(500).send('Server Error')
+
+            }
         }
     },
+
+    //@desc:For praticipating in The contest
+    //@access:Private
     async signup(req, res) {
         try {
             const user = req.user
             const contestname = req.params.contest
             const contest = await Contest.find({ name: contestname })
+            if (contest[0].signups.includes(user._id)) {
+                throw new Error('Already Signed Up')
+            }
             await contest[0].signups.push(user._id)
             await contest[0].save()
             await user.contests.push(contest[0]);
@@ -367,11 +419,18 @@ public class Solution {
         }
         catch (err) {
             console.log(err)
-            res.send('Server Error')
+            if (err.message == 'Already Signed Up') {
+                res.status(409).send("Already Signed UP")
+            }
+            else {
+                res.status(500).send('Server Error')
+            }
         }
 
     },
 
+    //@desc:For Displaying All the challenge available for a user.
+    //@access:Private
     async getChallenge(req, res) {
         try {
             const user = req.user
@@ -399,20 +458,27 @@ public class Solution {
         }
     },
 
+
+    //@desc:Adding challenge in the Contest
+    //@access:Private 
     async contestChallenge(req, res) {
         try {
             const user = req.user;
             const contestName = req.params.contest;
             const challengeName = req.params.challenge;
-
             const contest = await Contest.find({ name: contestName });
+            console.log(contest[0].createdBy)
+            console.log(user._id)
+            if (contest[0].createdBy != user._id || !contest[0].moderators.includes(user._id)) {
+                throw new Error('You are not authorized')
+            }
             const challenge = await Challenge.find({ name: challengeName });
             const name = challenge[0].name + '-' + contestName;
             const question = challenge[0].question + '-';
             const func_py = challenge[0].func_py;
             const func_node = challenge[0].func_node
             const func_name = challenge[0].func_name
-            const func_java = 'not defined'
+            const func_java = challenge[0].func_java
             const func_c = challenge[0].func_c
             const func_cpp = challenge[0].func_cpp
             const description = challenge[0].description;
@@ -421,22 +487,38 @@ public class Solution {
             const editorial = challenge[0].editorial;
             const maxScore = challenge[0].maxScore;
             const no_of_args = challenge[0].no_of_args
-
-            const challengeCreation = await Challenge.create({ name, description, question, output, editorial, maxScore, func_name, func_py, func_node, func_java, func_c, func_cpp, no_of_args, testCases: testCase, createdBy: user._id, contest: contest[0]._id })
+            const input = challenge[0].input
+            const challengeCreation = await Challenge.create({ name, description, question, output, input, editorial, maxScore, func_name, func_py, func_node, func_java, func_c, func_cpp, no_of_args, testCases: testCase, createdBy: user._id, contest: contest[0]._id })
             contest[0].challenges.push(challengeCreation)
             contest[0].save()
             res.json({ challenge: challengeCreation })
         } catch (err) {
-            console.log(err);
-            res.send('Server Error')
+            console.log(err)
+            if (err.message == 'You are not authorized') {
+                res.status(403).send(err.message)
+            }
+            else {
+                res.status(500).send('Server Error')
+
+            }
+
         }
     },
 
+    //@desc:Adding Moderators in contest
+    //@access:PRIVATE ONLY ORGANIZER
     async contestModerator(req, res) {
         try {
+            user = req.user
             const contestname = req.params.contest
             const username = req.params.username
             const contest = await Contest.find({ name: contestname })
+            if (user._id != contest[0].createdBy) {
+                throw new Error('You are not authorized')
+            }
+            if (contest[0].moderators.includes(user._id)) {
+                throw new Error('Already Added as moderator')
+            }
             const user = await User.find({ username: username })
             await user[0].moderator.push(contest[0])
             await user[0].save()
@@ -445,10 +527,22 @@ public class Solution {
             res.send('User added as moderator')
         }
         catch (err) {
-            console.log(err.message)
+            console.log(err)
+            if (err.message == 'You are not authorized') {
+                res.status(403).send(err.message)
+            }
+            else if (err.message == 'Already Added as moderator') {
+                res.status(409).send("Already Added a moderator")
+            }
+            else {
+                res.status(500).send('Server Error')
 
+            }
         }
     },
+
+    //@desc:FOR CHECKING THE LEADERBOARD OF A CHALLENGE
+    //@access:PUBLIC
     async challengeLeaderboard(req, res) {
         try {
             const challengename = req.params.challenge
@@ -475,6 +569,9 @@ public class Solution {
             res.status(501).send("Server Error");
         }
     },
+
+    //@desc:FOR UPDATING USER DEFINED AND ADMIN CHALLENGE
+    //@access:PRIVATE
     async updateChallenge(req, res) {
         const errors = validationResult(req)
         if (!errors.isEmpty()) {
@@ -525,22 +622,21 @@ public class Solution {
             const funct_cpp = (no_of_args, input, output) => {
                 const func = `#include <iostream>
               using namespace std;
-              // Complete this method
-              // I will be sending ${no_of_args} arguements as input
-              // sample input :${input}
-              // Sample output: ${output} 
+// Complete this method
+// I will be sending ${no_of_args} arguements as input
+// sample input :${input}
+// Sample output: ${output} 
               
-              int main()
-              {
-                  int a, b;
-                  // All the required Input Should be taken in single Statement
-                  cin >> b >> a;
-                  sumOfTwoNumbers = firstNumber + secondNumber;
-                  // Only One Print Statement Should be used
-                  cout << ;     
-              
-                  return 0;
-              }`
+    int main()
+          {
+              int a, b;
+              // All the required Input Should be taken in single Statement
+              cin >> b >> a;
+              sumOfTwoNumbers = firstNumber + secondNumber;
+              // Only One Print Statement Should be used
+              cout << ;     
+              return 0;
+}`
                 return func
             }
             const funct_java = (no_of_args, input, output) => {
@@ -562,7 +658,9 @@ public class Solution {
             const challengename = req.params.challenge
             const details = req.body
             const challenge = await Challenge.find({ name: challengename })
-
+            if (challenge.length == 0) {
+                throw new Error('challenge not found')
+            }
             if (details.hasOwnProperty('func_name')) {
                 if (details.hasOwnProperty('no_of_args') == false) {
                     details.no_of_args = challenge[0].no_of_args
@@ -589,6 +687,9 @@ public class Solution {
                 )
                 res.json({ updatechallenge: newchallenge })
             } else {
+                if (user._id != challenge[0].createdBy) {
+                    throw new Error('You are not authorized')
+                }
                 const newchallenge = await Challenge.updateOne(
                     { name: challengename, createdBy: user._id },
                     { ...details },
@@ -598,15 +699,31 @@ public class Solution {
             }
         }
         catch (err) {
-            console.log(err.message)
-            res.send(err)
+            console.log(err)
+            if (err.message == 'You are not authorized') {
+                res.status(403).send(err.message)
+            }
+            else if (err.message == 'challenge not found') {
+                res.status(404).send("challenge not found")
+            }
+            else {
+                res.status(500).send('Server Error')
+
+            }
         }
     },
+
+
+    //@desc:Adding challenge as bookmark
+    //@access:Private
     async addBookmark(req, res) {
         try {
             const challengename = req.params.challenge
             const user = req.user
             const challenge = await Challenge.find({ name: challengename })
+            if (challenge.length == 0) {
+                throw new Error('challenge not found')
+            }
             if (challenge[0].bookmarkedBy.includes(user._id)) {
                 throw new Error('Already Bookmarked')
             }
@@ -618,26 +735,54 @@ public class Solution {
             res.send('Challenge bookmarked')
         }
         catch (error) {
-            console.log(error.message)
-            res.send(error.message)
+            console.log(err)
+            if (err.message == 'Already Bookmarked') {
+                res.status(409).send(err.message)
+            }
+            else if (err.message == 'challenge not found') {
+                res.status(404).send(err.message)
+            }
+            else {
+                res.status(500).send('Server Error')
+
+            }
         }
     },
+
+    //@desc:For deleting bookmark of a user
+    //@access:PRIVATE
     async deleteBookmark(req, res) {
         try {
             let user = req.user
             const challengename = req.params.challenge
             const challenge = await Challenge.find({ name: challengename })
-            console.log(challenge[0].bookmarkedBy)
+            if (challenge.length == 0) {
+                throw new Error('challenge not found')
+            }
+            if (!challenge[0].bookmarkedBy.includes(user._id)) {
+                throw new Error('Not bookmarked')
+            }
             await Challenge.updateOne({ name: challengename }, { $pull: { bookmarkedBy: user._id } })
             await User.updateOne({ _id: user._id }, { $pull: { bookmarks: challenge[0]._id } })
             res.send('Bookmark deleted')
         }
         catch (err) {
-            console.log(err.message)
-            res.send(err)
+            console.log(err)
+            if (err.message == 'Not bookmarked') {
+                res.status(403).send(err.message)
+            }
+            else if (err.message == 'challenge not found') {
+                res.status(404).send(err.message)
+            }
+            else {
+                res.status(500).send('Server Error')
+
+            }
         }
     },
 
+    //@desc:for updating test case of a challenge
+    //@access:Private
     async testCaseUpdate(req, res) {
         try {
             const user = req.user;
@@ -645,6 +790,10 @@ public class Solution {
             const testCaseId = req.params.testCaseId;
             const details = req.body;
             const challenge = await Challenge.find({ name: challengeName });
+            if (challenge.length == 0) {
+                throw new Error('challenge not found')
+            }
+
 
             if (user === undefined) {
                 const updatetestCase = await Testcase.updateOne(
@@ -654,6 +803,9 @@ public class Solution {
                 );
                 res.json({ statusCode: 201, updatedtestCase: updatetestCase });
             } else {
+                if (user._id != challenge[0].createdBy) {
+                    throw new Error('You are not authorized')
+                }
                 const updatetestCase = await Testcase.updateOne(
                     { challenge: challenge[0]._id, user: user._id, _id: testCaseId },
                     { ...details },
@@ -664,10 +816,21 @@ public class Solution {
 
         } catch (err) {
             console.log(err.message);
-            res.send("Server Error");
+            if (err.message == 'You are not authorized') {
+                res.status(403).send(err.message)
+            }
+            else if (err.message == 'challenge not found') {
+                res.status(404).send(err.message)
+            }
+            else {
+                res.status(500).send('Server Error')
+
+            }
         }
     },
 
+    //@desc:For deleting a testcase of a challenge
+    //@access:Private
     async testCaseDelete(req, res) {
         try {
             const user = req.user;
@@ -675,15 +838,22 @@ public class Solution {
             const testCaseId = req.params.testCaseId;
 
             const challenge = await Challenge.find({ name: challengeName });
-            await Challenge.updateOne({ name: challengeName }, { $pull: { testCases: testCaseId } })
+            if (challenge.length == 0) {
+                throw new Error('challenge not found')
+            }
 
             if (user === undefined) {
+                await Challenge.updateOne({ name: challengeName }, { $pull: { testCases: testCaseId } })
                 const deletetestCase = await Testcase.deleteOne(
                     { challenge: challenge[0]._id, user: null, _id: testCaseId },
                 )
                 res.json({ statusCode: 201, deletetestCase: deletetestCase });
             }
             else {
+                if (user._id != challenge[0].createdBy) {
+                    throw new Error('You are not authorized')
+                }
+                await Challenge.updateOne({ name: challengeName }, { $pull: { testCases: testCaseId } })
                 const deletetestCase = await Testcase.deleteOne(
                     { challenge: challenge[0]._id, user: user._id, _id: testCaseId },
                 )
@@ -691,16 +861,34 @@ public class Solution {
             }
         } catch (err) {
             console.log(err.message);
-            res.send("Server Error");
+            if (err.message == 'You are not authorized') {
+                res.status(403).send(err.message)
+            }
+            else if (err.message == 'challenge not found') {
+                res.status(404).send(err.message)
+            }
+            else {
+                res.status(500).send('Server Error')
+
+            }
         }
     },
 
+
+    //@desc:For updating details of a challenge
+    //@access:PRIVATE
     async contestUpdate(req, res) {
         try {
             const contestName = req.params.contest;
+            const contest = await Contest.find({ name: contestName })
+            if (contest.length == 0) {
+                throw new Error('contest not found')
+            }
             const user = req.user;
             const details = req.body;
-
+            if (contest[0].createdBy != user._id || !contest[0].moderators.includes(user._id)) {
+                throw new Error('You are not authorized')
+            }
             const contestUpdate = await Contest.updateOne(
                 { name: contestName, createdBy: user._id },
                 { ...details },
@@ -709,10 +897,22 @@ public class Solution {
             res.json({ statusCode: 201, updatedContest: contestUpdate });
         } catch (err) {
             console.log(err.message)
-            res.send("Server Error");
+            if (err.message == 'You are not authorized') {
+                res.status(403).send(err.message)
+            }
+            else if (err.message == 'contest not found') {
+                res.status(404).send(err.message)
+            }
+            else {
+                res.status(500).send('Server Error')
+
+            }
         }
     },
 
+
+    //@desc:Deleting Challenge
+    //@access:PRIVATE
     async deleteChallenge(req, res) {
         try {
             const user = req.user
@@ -762,6 +962,13 @@ public class Solution {
             } else {
 
                 const challenge = await Challenge.find({ name: challengeName });
+                if (challenge.length == 0) {
+                    throw new Error('challenge not found')
+                }
+
+                if (user._id != challenge[0].createdBy) {
+                    throw new Error('You are not authorized')
+                }
 
                 const submission = await Submission.find({ challenge: challenge[0]._id });
 
@@ -805,20 +1012,43 @@ public class Solution {
             }
 
         } catch (err) {
-            console.log(err.message)
-            res.send("Server Error");
+            console.log(err.message);
+            if (err.message == 'You are not authorized') {
+                res.status(403).send(err.message)
+            }
+            else if (err.message == 'challenge not found') {
+                res.status(404).send(err.message)
+            }
+            else {
+                res.status(500).send('Server Error')
+
+            }
         }
     },
 
+
+    //@desc:Deleting moderator from the contest
+    //@access:PRIVATE
     async deleteContestModerator(req, res) {
         try {
+
+            const loginuser = req.user
             const contestName = req.params.contest;
 
             const username = req.params.username;
 
             const contest = await Contest.find({ name: contestName });
+            if (contest.length == 0) {
+                throw new Error('contest not found')
+            }
+            if (loginuser._id != contest[0].createdBy) {
+                throw new Error('You are not authorized')
+            }
 
             const user = await User.find({ username: username });
+            if (user.length == 0) {
+                throw new Error('user not found')
+            }
 
             await Contest.updateOne({ name: contestName }, { $pull: { moderators: user[0]._id } });
 
@@ -827,17 +1057,37 @@ public class Solution {
             res.send(`${username} is removed as moderator for the contest ${contestName}`);
 
         } catch (err) {
-            console.log(err.message)
-            res.send("Server Error")
+            console.log(err.message);
+            if (err.message == 'You are not authorized') {
+                res.status(403).send(err.message)
+            }
+            else if (err.message == 'contest not found') {
+                res.status(404).send(err.message)
+            }
+            else if (err.message == 'user not found') {
+                res.status(404).send(err.message)
+            }
+            else {
+                res.status(500).send('Server Error')
+
+            }
         }
     },
 
+    //@desc:For deleting the contest
+    //@access:PRIVATE
     async deleteContest(req, res) {
         try {
             const contestName = req.params.contest;
             const user = req.user;
 
             const contest = await Contest.find({ name: contestName });
+            if (contest.length == 0) {
+                throw new Error('contest not found')
+            }
+            if (loginuser._id != contest[0].createdBy) {
+                throw new Error('You are not authorized')
+            }
 
             const challenge = await Challenge.find({ contest: contest[0]._id });
 
@@ -897,7 +1147,16 @@ public class Solution {
             }
         } catch (err) {
             console.log(err.message);
-            res.send("Server Error");
+            if (err.message == 'You are not authorized') {
+                res.status(403).send(err.message)
+            }
+            else if (err.message == 'challenge not found') {
+                res.status(404).send(err.message)
+            }
+            else {
+                res.status(500).send('Server Error')
+
+            }
         }
     }
 

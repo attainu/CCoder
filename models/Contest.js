@@ -47,13 +47,11 @@ const contestSchema = new Schema(
     signups: [{
       type: Schema.Types.ObjectId,
       ref: "user",
-      unique:true
     }],
     moderators: [
       {
         type: Schema.Types.ObjectId,
         ref: "user",
-        unique:true
       }
     ],
     challenges: [

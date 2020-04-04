@@ -3,7 +3,7 @@ const bcrypt = require("bcryptjs");
 const { sign } = require("jsonwebtoken");
 const Schema = mongoose.Schema;
 
-
+// Schema for userS
 const userSchema = new Schema(
     {
         name: {
@@ -85,6 +85,7 @@ const userSchema = new Schema(
     { timestamps: true}
 );
 
+//static method to find user by email and password
 userSchema.statics.findByEmailAndPassword = async (email, password) => {
     try {
         const user = await User.findOne({ email: email});
@@ -98,6 +99,7 @@ userSchema.statics.findByEmailAndPassword = async (email, password) => {
     }
 };
 
+//method to generate a authToken
 userSchema.methods.generateAuthToken = async function() {
     const user = this;
     
@@ -109,6 +111,7 @@ userSchema.methods.generateAuthToken = async function() {
     return accessToken;
 }
 
+//static method to null the accessToken of the user
 userSchema.statics.nullifyToken = async (token) => {
     try {
         const user = await User.findOne({accessToken: token})
@@ -120,6 +123,8 @@ userSchema.statics.nullifyToken = async (token) => {
         console.log(err.message)   
     }
 }
+
+//static method to find user by password
 
 userSchema.statics.findByPassword = async (accessToken, oldpassword) => {
     try {

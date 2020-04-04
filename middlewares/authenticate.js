@@ -1,6 +1,8 @@
 const User = require('../models/User');
 const { verify } = require('jsonwebtoken');
 
+
+//Middleware to authenticate the user
 module.exports = async (req, res, next) => {
     try {
         const authToken = req.params.token;
