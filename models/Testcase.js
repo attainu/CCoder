@@ -1,6 +1,7 @@
 var mongoose = require("mongoose");
 var Schema = mongoose.Schema;
 
+//Test Case Schema
 var testCaseSchema = new Schema(
   {
     input: {

@@ -1,5 +1,6 @@
 const nodemailer = require("nodemailer");
 
+// Mailer is used to Send the Email for the user
 let transport =  nodemailer.createTransport({
     host: 'smtp.gmail.com',
     port:465,
@@ -23,6 +24,8 @@ const sendMailToUser = async (mode, email, token) => {
     // console.log(token)
     // console.log("hi", mode);
     let html = null;
+
+    // Confirmation Mail
     if(mode === "confirm")
         html = `
         <h1>Welcome to CCoder</h1>
@@ -30,6 +33,7 @@ const sendMailToUser = async (mode, email, token) => {
             <a href=${domainName}/confirm/${token}>here</a> to confirm your account. or copy paste
             ${domainName}/confirm/${token} to your browser
         </p>`;
+    // Reset Mail
     else if(mode === 'reset')
         html = `<h1>Hi there.</h1>
         <p>You have recently requested for a change in password. Click 

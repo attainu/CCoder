@@ -4,7 +4,7 @@ const { sign, verify } = require("jsonwebtoken");
 const sendMail = require("../utils/mailer");
 const Schema = mongoose.Schema;
 
-// Schema for userS
+// User Schema
 const userSchema = new Schema(
     {
         name: {
@@ -112,6 +112,7 @@ userSchema.statics.findByEmailAndPassword = async (email, password) => {
     }
 };
 
+// Methods used to Generate JWT Token
 userSchema.methods.generateAuthToken = async function(mode) {
     const user = this;
 
@@ -133,6 +134,7 @@ userSchema.methods.generateAuthToken = async function(mode) {
   
 }
 
+// Methods used to Generate JWT Token during Login
 userSchema.methods.regenerateAuthToken = async function() {
     const user = this
 
@@ -159,7 +161,6 @@ userSchema.statics.nullifyToken = async (token) => {
 }
 
 //static method to find user by password
-
 userSchema.statics.findByPassword = async (accessToken, oldpassword) => {
     try {
         const user = await User.findOne({accessToken:accessToken});
@@ -173,6 +174,7 @@ userSchema.statics.findByPassword = async (accessToken, oldpassword) => {
     }
 };
 
+//static method to find user by email 
 userSchema.statics.findByEmail = async (email) => {
     try {
         const user = await User.find({ email: email})
@@ -184,15 +186,16 @@ userSchema.statics.findByEmail = async (email) => {
     }
 };
 
+//static method to find user by Token
 userSchema.statics.findByToken = async (token) => {
     try {
       const user = await User.find({ accessToken: token });
       if(!user) throw new Error("Invalid Credentials");
       const payload = await verify(token, process.env.JWT_SECRET_KEY);
-      console.log(payload)
+      //console.log(payload)
       if(payload) {
-        user.verified = true;
-        user.save()
+        user[0].verified = true;
+        await user[0].save()
         return user
       }
     }

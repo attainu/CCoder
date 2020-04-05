@@ -1,8 +1,9 @@
 const passport = require("passport");
-const { Strategy: JWTStrategy, ExtractJwt } = require("passport-jwt");
 const { Strategy: GoogleStrategy } = require("passport-google-oauth20");
 const { Strategy: GitHubStrategy } = require("passport-github2");
 const User = require("../models/User");
+
+//Passport is used for Thirdparty Registration/login
 
 //Google Strategy
 const { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET } = process.env;

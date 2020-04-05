@@ -1,6 +1,6 @@
 const multer = require('multer');
 
-
+// Multer is used to upload the Image of the user
 let multerConfig = multer({
     storage: multer.memoryStorage(),
     limits: {

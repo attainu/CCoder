@@ -31,6 +31,8 @@ module.exports = {
         }
     },
 
+    //@desc:For Confirming the Registration
+    //@access:Private
     async verifyUserEmail(req, res) {
         try {
             const confirmToken = req.params.token;
@@ -42,6 +44,8 @@ module.exports = {
         }    
     },
 
+    //@desc:For Login user
+    //@access:PUBLIC
     async userLogin(req, res) {
         try {
             const {email, password} = req.body;
@@ -105,6 +109,8 @@ module.exports = {
         }
     },
 
+    //@desc:For Profile Pic Update for user
+    //@access:PRIVATE 
     async userImageUpdate(req, res) {
         const user = req.user;
         const token = req.params.token
@@ -123,6 +129,8 @@ module.exports = {
         }
     },
 
+    //@desc:For Changing Password of user
+    //@access:PRIVATE
     async userChangePassword(req,res){
         const errors = validationResult(req)
         if (!errors.isEmpty()) {
@@ -151,6 +159,8 @@ module.exports = {
         }
     },
 
+    //@desc:For Forgot Password
+    //@access:PUBLIC
     async forgotPassword(req, res) {
         const { email } = req.body;
         if(!email) return res.status(400).send("Email is required");
@@ -172,6 +182,8 @@ module.exports = {
         }
     },
 
+    //@desc:For Update the Forgot Password
+    //@access:PRIVATE
     async updateForgotPassword(req,res) {
         const errors = validationResult(req)
         if (!errors.isEmpty()) {
@@ -194,6 +206,8 @@ module.exports = {
         }
     },
 
+    //@desc:For registering/login user by Google
+    //@access:PUBLIC
     async fetchUserFromGoogle(req, res) {
         const user = req.user;
         const accessToken = await user.generateAuthToken("confirm");
@@ -208,7 +222,7 @@ module.exports = {
         res.send("Received");
       },
 
-    //@desc:For github login
+    //@desc:For register/login user by Github
     //@access:PUBLIC
       async fetchUserFromGithub(req, res) {
         const user = req.user;

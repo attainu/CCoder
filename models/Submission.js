@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 
+// Submission Schema
 const submissionSchema = new Schema(
     {
         user: {
