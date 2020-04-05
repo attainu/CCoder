@@ -38,7 +38,7 @@ module.exports = {
     }
   },
   disconnect: function(){
-    console.log('Database Disconnected')
+    console.log('Database Disconnected Successfully')
     mongoose.disconnect();
   }
 }

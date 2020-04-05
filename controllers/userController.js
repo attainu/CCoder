@@ -15,9 +15,6 @@ module.exports = {
         }
         try {
             const {name, username,email, password, experience, education} = req.body;
-            if(!email || !password || !name ){
-                return res.status(400).send({ statusCode: 400, message: "Bad request"});
-            }
             const createUser = await User.create({name, username,email, password, experience, education,isThirdPartyUser: false});
             await createUser.generateAuthToken("confirm");
             res.status(201).json({
@@ -53,7 +50,7 @@ module.exports = {
                 const accessToken = await user.regenerateAuthToken();
                 res.status(200).json({
                     statusCode:200,
-                    user,
+                    loginUser:user,
                     accessToken: accessToken,
                     expiresIn: "24h"
                 });

@@ -9,14 +9,17 @@ let transport =  nodemailer.createTransport({
         pass: process.env.GMAIL_PASSWORD
     }
 })
+if(process.env.NODE_ENV!='test'){
+    transport.verify((error, success) => {
+        if(error) {
+            console.log(error);
+        } else {
+            console.log('Server is ready to take our messages');
+        }
+    })
+}
 
-transport.verify((error, success) => {
-    if(error) {
-        console.log(error);
-    } else {
-        console.log('Server is ready to take our messages');
-    }
-})
+
 
 const sendMailToUser = async (mode, email, token) => {
     const domainName = process.env.DOMAIN_NAME || `http://localhost:1234`;

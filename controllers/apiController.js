@@ -120,7 +120,6 @@ public class Solution {
 
 
         } catch (err) {
-            console.log(err.message);
             if (err.message === 'Mongo Error') {
                 res.status(409).send("Problem Name Should be Different");
             }
@@ -128,7 +127,7 @@ public class Solution {
                 res.status(422).send("Bad Request")
             }
             else if (err.message=='Validation error') {
-                res.status(422).json({error:err.message})
+                res.status(422).send(err.message)
             }
             else {
                 res.status(500).send('Server Error')
@@ -150,6 +149,9 @@ public class Solution {
             if (user === undefined) {
 
                 let challenge = await Challenge.find({ name: challengename, createdBy: null })
+                if (challenge.length == 0) {
+                    throw new Error('Invalid Challenge')
+                }
                 let func = challenge[0].func_name
                 input = input.split(",")
                 let newinput = [];
@@ -210,9 +212,8 @@ public class Solution {
 
         }
         catch (err) {
-            console.log(err)
             if (err.message == 'Invalid Challenge') {
-                res.status(403).send(err.message)
+                res.status(404).send(err.message)
             }
             else {
                 res.status(500).send('Server Error');

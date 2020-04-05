@@ -2,12 +2,76 @@ process.env.NODE_ENV='test'
 const request = require('supertest')
 const api = require('../app')
 const db = require('../db')
-db.connect
+let user;
+let challenge;
+let testcase;
+let contest;
+beforeAll(() => {
+  db.connect
+});
+afterAll(() => {
+  db.disconnect()
+});
 
-describe('Challenge Creation', () => {
+describe('Register user', () => {
+  test('should post a Error response of POST /user/register ',function(done){
+    request(api)
+      .post('/user/register')
+      .send({
+          name:"anurag gothi",
+          username:"anurag gothi",
+          email:"anuraggothi4@gmail.com",
+          password:"Anurag@123"
+    })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(422)
+      .end(function(err, res) {
+        if (err) return done(err);
+        done();
+      });
+  })
+  test('should post a Accept response of POST /user/register ',function(done){
+    request(api)
+      .post('/user/register')
+      .send({
+          name:"anurag gothi",
+          username:"anuraggothi",
+          email:"anuraggothi4@gmail.com",
+          password:"Anurag@123"
+    })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(201)
+      .end(function(err, res) {
+        user = res.body.createUser
+        if (err) return done(err);
+        done();
+      });
+  })
+  test('should post a Accept response of POST /user/login ',function(done){
+    request(api)
+      .post('/user/login')
+      .send({
+
+          email:user.email,
+          password:user.password
+    })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(200)
+      .end(function(err, res) {
+        user = res.body.loginUser
+        if (err) return done(err);
+        done();
+      });
+  })
+  })
+
+describe('Challenge Creation with testcases', () => {
 test('should post a response rejecting of POST /admin/challenge ',function(done){
     request(api)
-      .post('/admin/challenge')
+      .post('/admin/challenge/')
       .send({
         decription:"add",
         question:"abcdec",
@@ -19,14 +83,14 @@ test('should post a response rejecting of POST /admin/challenge ',function(done)
         maxScore:40
     })
       .set('Accept', 'application/json')
-      .expect('Content-Type', /json/)
+      .expect('Content-Type', "text/html; charset=utf-8")
       .expect(422)
       .end(function(err, res) {
         if (err) return done(err);
         done();
       });
 })
-test('should post a response ACcept  of POST /admin/challenge ',function(done){
+test('should post a Accept response of POST /admin/challenge ',function(done){
     request(api)
       .post('/admin/challenge')
       .send({
@@ -44,8 +108,43 @@ test('should post a response ACcept  of POST /admin/challenge ',function(done){
       .expect('Content-Type', /json/)
       .expect(201)
       .end(function(err, res) {
+        console.log(user)
+        challenge = res.body.challenge
         if (err) return done(err);
         done();
       });
 })
+test('should post a Accept response of POST /testcase/:challenge',function(done){
+  request(api)
+    .post(`/admin/testcase/${challenge.name}`)
+    .send({
+      result:"15",
+      input:"5,10"
+  })
+    .set('Accept', 'application/json')
+    .expect('Content-Type', /json/)
+    .expect(201)
+    .end(function(err, res) {
+      if (err) return done(err);
+      done();
+    });
 })
+test('should post a Error response of POST /testcase/:challenge ',function(done){
+  request(api)
+    .post('/admin/testcase/aanurag')
+    .send({
+      result:"15",
+      input:"5,10"
+  })
+    .set('Accept', 'application/json')
+    .expect('Content-Type', "text/html; charset=utf-8")
+    .expect(404)
+    .end(function(err, res) {
+      if (err) return done(err);
+      done();
+    });
+})
+})
+
+
+
