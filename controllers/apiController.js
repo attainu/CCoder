@@ -16,11 +16,12 @@ module.exports = {
     //@access: private;
     //@desc: Creating user defined challenge
     async challenge(req, res) {
-        const errors = validationResult(req)
-        if (!errors.isEmpty()) {
-            return res.statusCode(422).json({ errors: errors.array() })
-        }
+        
         try {
+            const errors = validationResult(req)
+        if (!errors.isEmpty()) {
+            throw new Error('Validation error')
+        }
             const funct_node = (name, no_of_args) => {
                 const func = `
         # Complete the ${name} function below.
@@ -125,6 +126,9 @@ public class Solution {
             }
             else if (err.code == 11000) {
                 res.status(422).send("Bad Request")
+            }
+            else if (err.message=='Validation error') {
+                res.status(422).json({error:err.message})
             }
             else {
                 res.status(500).send('Server Error')
@@ -455,6 +459,34 @@ public class Solution {
         } catch (err) {
             console.log(err);
             res.send('Server Error')
+        }
+    },
+
+    //@desc:All Admin Challenge
+    //@access:PUBLIC
+    async allChallenge(req, res) {
+        try {
+            const page = req.query.page
+            const challenge = await
+                Challenge.find({
+                    $and: [        
+                        { 'createdBy': null },
+                        { 'contest': null }
+                    ]
+                }).skip((page-1)*10).limit(10)
+            if(challenge.length==0){
+                throw new Error('Page limit exceeded')
+            }
+            res.status(200).json({Challenges:challenge})
+
+        } catch (err) {
+            console.log(err)
+            if (err.message == 'Page limit exceeded') {
+                res.status(404).json({error:err.message})
+            }
+            else {
+                res.status(500).send('Server Error')
+            }
         }
     },
 

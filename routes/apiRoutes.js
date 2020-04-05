@@ -1,6 +1,6 @@
 const { Router } = require("express");
 const router = Router()
-const { testCase, submission, challengeDiscussion, challenge, contest, signup, addBookmark, getChallenge, contestChallenge, contestModerator, updateChallenge, deleteBookmark, challengeLeaderboard, testCaseUpdate, testCaseDelete, contestUpdate, deleteChallenge, deleteContestModerator, deleteContest} = require("../controllers/apiController");
+const { testCase, submission, challengeDiscussion, challenge, contest, signup, addBookmark, getChallenge, contestChallenge, contestModerator, updateChallenge, deleteBookmark, challengeLeaderboard, testCaseUpdate, testCaseDelete, contestUpdate, deleteChallenge, deleteContestModerator, deleteContest,allChallenge} = require("../controllers/apiController");
 const authenticate = require('../middlewares/authenticate');
 const { check } = require("express-validator")
 
@@ -15,7 +15,9 @@ router.post("/admin/challenge", [
         .isLength({ min: 1 }).trim()
         .withMessage('function name cannot be empty.')
         .matches(/^[a-zA-Z0-9_]+$/, 'i')
-        .withMessage('Function name must be Alphabetical, and can contain underscores')
+        .withMessage('Function name must be Alphabetical, and can contain underscores'),
+    check('name')
+        .isLength({min:1}).trim()
 ], challenge);
 
 //adding testcase for admin challnge
@@ -137,5 +139,10 @@ router.patch("/contest/:contest/update/:token", authenticate, contestUpdate);
 
 //deleting contest
 router.delete("/contest/delete/:contest/:token", authenticate, deleteContest);
+
+
+//PUBLIC
+router.get("/dashboard", allChallenge);
+
 
 module.exports = router;
