@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
-const { sign } = require("jsonwebtoken");
+const { sign, verify } = require("jsonwebtoken");
+const sendMail = require("../utils/mailer");
 const Schema = mongoose.Schema;
 
 // Schema for userS
@@ -39,7 +40,19 @@ const userSchema = new Schema(
             trim: true
         },
         accessToken: {
-            type: String
+            type: String,
+            trim: true
+        },
+        resetToken: {
+            type: String,
+            trim: true
+        },
+        verified: {
+            type: Boolean,
+            default: 0
+        },
+        fileUpload: {
+            type:String
         },
         contests: [
             {
@@ -99,16 +112,37 @@ userSchema.statics.findByEmailAndPassword = async (email, password) => {
     }
 };
 
-//method to generate a authToken
-userSchema.methods.generateAuthToken = async function() {
+userSchema.methods.generateAuthToken = async function(mode) {
     const user = this;
-    
-    const accessToken = await sign({ id: user._id }, process.env.JWT_SECRET_KEY, {
+
+    if(mode === "confirm") {
+        const accessToken = await sign({ id: user._id }, process.env.JWT_SECRET_KEY, {
+            expiresIn: "24h"
+        });
+        user.accessToken = accessToken;
+        await user.save();
+        await sendMail(mode, user.email, accessToken);
+    } else if( mode === "reset") {
+        const resetToken = await sign({ id: user._id }, process.env.JWT_SECRET_KEY, {
+            expiresIn: "3m"
+        });
+        user.resetToken = resetToken;
+        await user.save();
+        await sendMail(mode, user.email,resetToken);
+    }
+  
+}
+
+userSchema.methods.regenerateAuthToken = async function() {
+    const user = this
+
+    const token = await sign({ id: user._id }, process.env.JWT_SECRET_KEY, {
         expiresIn: "24h"
     });
-    user.accessToken = accessToken;
-    await user.save();
-    return accessToken;
+    
+    user.accessToken = token;
+    await user.save()
+    return token
 }
 
 //static method to null the accessToken of the user
@@ -138,6 +172,36 @@ userSchema.statics.findByPassword = async (accessToken, oldpassword) => {
         throw err;
     }
 };
+
+userSchema.statics.findByEmail = async (email) => {
+    try {
+        const user = await User.find({ email: email})
+        if(!user) throw new Error("Invalid Credentials");
+        return user
+    } catch (err) {
+        err.name = 'AuthError';
+        throw err;
+    }
+};
+
+userSchema.statics.findByToken = async (token) => {
+    try {
+      const user = await User.find({ accessToken: token });
+      if(!user) throw new Error("Invalid Credentials");
+      const payload = await verify(token, process.env.JWT_SECRET_KEY);
+      console.log(payload)
+      if(payload) {
+        user.verified = true;
+        user.save()
+        return user
+      }
+    }
+    catch (err) {
+      console.log(err.message)
+      err.name = "Invalid Credentials";
+      throw err;
+    }
+  }
 
 userSchema.pre("save", async function(next) {
     const user = this;

@@ -4,13 +4,13 @@ const dotenv = require("dotenv");
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
 dotenv.config();
-require("./passport");
+require("./utils/passport");
 
 
 // Init
 const app = require('./app');
 
-app.listen(1236, function() {
+app.listen(1234, function() {
   console.log("Server started");
 });
 

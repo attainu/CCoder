@@ -6,7 +6,7 @@ const cors = require("cors");
 dotenv.config();
 const db = require("./db");
 db.connect()
-require("./passport");
+require("./utils/passport");
 const userRoutes = require('./routes/userRoutes');
 const apiRoutes = require("./routes/apiRoutes");
 
