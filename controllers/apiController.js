@@ -386,18 +386,16 @@ public class Solution {
         try {
             const details = req.body
             const user = req.user;
-            details.moderators = user._id
             details.createdBy = user._id
             const contest = await Contest.create(details)
             user.moderator.push(contest)
             await user.save()
-            res.json({ contest: contest })
+            res.status(201).json({ contest: contest })
 
         }
         catch (err) {
-            console.log(err)
             if (err.code == 11000) {
-                res.status(409).send("Duplicate Values")
+                res.status(409).send("database error")
             }
             else {
                 res.status(500).send('Server Error')
@@ -413,22 +411,21 @@ public class Solution {
             const user = req.user
             const contestname = req.params.contest
             const contest = await Contest.find({ name: contestname })
-            if (contest[0].signups.includes(user._id)) {
+            if (contest[0].signups.includes(user._id.toString())) {
                 throw new Error('Already Signed Up')
             }
             await contest[0].signups.push(user._id)
             await contest[0].save()
             await user.contests.push(contest[0]);
             await user.save()
-            res.json({ user: user })
+            res.status(201).json({ user: user })
         }
         catch (err) {
-            console.log(err)
             if (err.message == 'Already Signed Up') {
-                res.status(409).send("Already Signed UP")
+                res.status(409).json({error:"Already Signed UP"})
             }
             else {
-                res.status(500).send('Server Error')
+                res.status(500).json({error:"Server Error"})
             }
         }
 
@@ -500,12 +497,13 @@ public class Solution {
             const contestName = req.params.contest;
             const challengeName = req.params.challenge;
             const contest = await Contest.find({ name: contestName });
-            console.log(contest[0].createdBy)
-            console.log(user._id)
-            if (contest[0].createdBy != user._id || !contest[0].moderators.includes(user._id)) {
+            if(contest[0].createdBy.toString()!=user._id.toString()){
                 throw new Error('You are not authorized')
             }
             const challenge = await Challenge.find({ name: challengeName });
+            if (challenge.length == 0) {
+                throw new Error('challenge not found')
+            }
             const name = challenge[0].name + '-' + contestName;
             const question = challenge[0].question + '-';
             const func_py = challenge[0].func_py;
@@ -526,13 +524,14 @@ public class Solution {
             contest[0].save()
             res.json({ challenge: challengeCreation })
         } catch (err) {
-            console.log(err)
             if (err.message == 'You are not authorized') {
-                res.status(403).send(err.message)
+                res.status(403).json({error:err.message})
+            }
+            else if (err.message == 'challenge not found') {
+                res.status(404).json({error:"challenge not found"})
             }
             else {
-                res.status(500).send('Server Error')
-
+                res.status(500).json({error:'Server Error'})
             }
 
         }
@@ -542,14 +541,14 @@ public class Solution {
     //@access:PRIVATE ONLY ORGANIZER
     async contestModerator(req, res) {
         try {
-            user = req.user
+            const users = req.user
             const contestname = req.params.contest
             const username = req.params.username
             const contest = await Contest.find({ name: contestname })
-            if (user._id != contest[0].createdBy) {
+            if (users._id.toString() != contest[0].createdBy.toString()) {
                 throw new Error('You are not authorized')
             }
-            if (contest[0].moderators.includes(user._id)) {
+            if (contest[0].moderators.includes(users._id.toString())) {
                 throw new Error('Already Added as moderator')
             }
             const user = await User.find({ username: username })
@@ -557,18 +556,17 @@ public class Solution {
             await user[0].save()
             await contest[0].moderators.push(user[0])
             await contest[0].save()
-            res.send('User added as moderator')
+            res.status(201).json({response:'User added as moderator',moderator:contest[0]})
         }
         catch (err) {
-            console.log(err)
             if (err.message == 'You are not authorized') {
-                res.status(403).send(err.message)
+                res.status(403).json({error:err.message})
             }
             else if (err.message == 'Already Added as moderator') {
-                res.status(409).send("Already Added a moderator")
+                res.status(409).json({error:err.message})
             }
             else {
-                res.status(500).send('Server Error')
+                res.status(500).json({error:'Server Error'})
 
             }
         }

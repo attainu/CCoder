@@ -50,7 +50,8 @@ module.exports = {
             const user = await User.findByEmailAndPassword(email, password);
             if(user.verified === false) {
                 return res.json({message: "Please verify your email first"});
-            }else {
+            }
+            else {
                 const accessToken = await user.regenerateAuthToken();
                 res.status(200).json({
                     statusCode:200,
@@ -61,8 +62,14 @@ module.exports = {
             }
             
         } catch (err) {
-            if(err.name === 'AuthError'){
+            if(err.message=='Invalid Credentials'){
+                res.status(400).json({statusCode:400, message: 'Invalid Credentials'});
+            }
+            else if(err.name === 'AuthError'){
                 res.json({message: err.message})
+            }
+            else{
+                res.status(500).json({statusCode:500, message: 'Sever error'});
             }
         }
     },
