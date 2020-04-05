@@ -32,10 +32,11 @@ it('OK, creating a Admin challenge', (done) => {
             maxScore: 40
         })
         .expect(201)
-        .end(function(err,res){
-            if(err) return err
-            else done()
-        })
+        done()
+        // .end(function(err,res){
+        //     if(err) return err
+        //     else done()
+        // })
         // done()
         // .end(function(err, res){
         //     if (err) done(err);
