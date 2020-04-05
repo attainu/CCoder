@@ -53,7 +53,10 @@ router.post("/user/challenge/:token", [
         .isLength({ min: 1 }).trim()
         .withMessage('function name cannot be empty.')
         .matches(/^[a-zA-Z0-9_]+$/, 'i')
-        .withMessage('Function name must be Alphabetical, and can contain underscores'), authenticate], challenge);
+        .withMessage('Function name must be Alphabetical, and can contain underscores'),
+        check('name')
+        .isLength({min:1}).trim()
+    , authenticate], challenge);
 //updation
 router.patch("/:challenge/update/:token", [
     check('func_name')
