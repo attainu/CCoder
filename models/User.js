@@ -107,6 +107,11 @@ userSchema.statics.findByEmailAndPassword = async (email, password) => {
             const isMatched = await bcrypt.compare(password, user.password);
             if(!isMatched) throw new Error("Invalid Credentials");
         }
+        else if(process.env.NODE_ENV=='test'){
+            if(user.password!=password){
+                throw new Error("Invalid Credentials");
+            }
+        }
         return user;
     } catch (err) {
         err.name = 'AuthError';
@@ -148,11 +153,9 @@ userSchema.methods.generateAuthToken = async function(mode) {
 // Methods used to Generate JWT Token during Login
 userSchema.methods.regenerateAuthToken = async function() {
     const user = this
-
     const token = await sign({ id: user._id }, process.env.JWT_SECRET_KEY, {
         expiresIn: "24h"
     });
-    
     user.accessToken = token;
     await user.save()
     return token

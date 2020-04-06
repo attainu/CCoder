@@ -95,7 +95,7 @@ router.post("/submit/:challenge/:token", [
         .withMessage('Code cannot be empty'), authenticate], submission);
 
 //@leaderboard
-router.get("/:challenge/leaderboard", challengeLeaderboard);
+router.get("/leaderboard/:challenge/:token",authenticate,challengeLeaderboard);
 
 //@bookmark add delete
 router.post("/:challenge/bookmark/add/:token", authenticate, addBookmark);
@@ -128,7 +128,7 @@ router.post("/contest/new/:token", [
 
 //Adding challenge
 router.get("/contest/:token", authenticate, getChallenge);
-router.post("/contest/:contest/:challenge/:token", authenticate, contestChallenge);
+router.post("/contest/:contest/addchallenge/:challenge/:token", authenticate, contestChallenge);
 
 //Adding deleting moderator
 router.post("/contest/:contest/addmoderator/:username/:token", authenticate, contestModerator);
