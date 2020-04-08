@@ -10,7 +10,8 @@ const { check } = require("express-validator")
 
 
 //challenge creation by admin
-router.post("/admin/challenge", [
+router.post("/admin/challenge", 
+[
     check('func_name')
         .isLength({ min: 1 }).trim()
         .withMessage('function name cannot be empty.')
@@ -18,7 +19,8 @@ router.post("/admin/challenge", [
         .withMessage('Function name must be Alphabetical, and can contain underscores'),
     check('name')
         .isLength({min:1}).trim()
-], challenge);
+], 
+challenge);
 
 //adding testcase for admin challnge
 router.post("/admin/testcase/:challenge",

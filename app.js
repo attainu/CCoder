@@ -14,13 +14,7 @@ const apiRoutes = require("./routes/apiRoutes");
 const app = express();
 app.use(express.json());
 app.use(cookieParser());
-app.use(
-  cors({
-    origin: "http://localhost:3000",
-    credentials: true,
-    allowedHeaders: ["Content-Type"]
-  })
-);
+app.use(cors());
 app.use(passport.initialize());
 app.use(apiRoutes);
 app.use(userRoutes);

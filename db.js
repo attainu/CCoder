@@ -24,7 +24,7 @@ module.exports = {
 
     else {
       mongoose
-        .connect("mongodb://127.0.0.1:27011/Ccoder", {
+        .connect(process.env.MONGODB_URI.replace("<password>",process.env.MONGODB_PASSWORD), {
           useNewUrlParser: true,
           useUnifiedTopology: true,
           useCreateIndex: true
