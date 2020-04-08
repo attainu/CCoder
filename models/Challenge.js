@@ -15,8 +15,7 @@ const challengeSchema = new Schema(
     },
     question: {
       type: String,
-      required: true,
-      trim: true,
+      required: true
     },
     func_name: {
       type: String,

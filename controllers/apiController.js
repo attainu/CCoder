@@ -108,7 +108,7 @@ public class Solution {
             const func_cpp = funct_cpp(no_of_args, input, output)
             if (user === undefined) {
                 const challenge = await Challenge.create({ name, description, question, input, output, editorial, maxScore, func_name, no_of_args, func_py, func_node, func_java, func_c, func_cpp });
-
+                //console.log(challenge)
                 res.status(201).json({ status: 201, challenge: challenge });
             }
             else {
@@ -120,16 +120,18 @@ public class Solution {
 
 
         } catch (err) {
-            if (err.message === 'Mongo Error') {
+            //console.log(err)
+            if (err.message === 'MongoError') {
                 res.status(409).send("Problem Name Should be Different");
             }
             else if (err.code == 11000) {
-                res.status(422).send("Bad Request")
+                res.status(422).send("Problem Name Should be Different")
             }
             else if (err.message=='Validation error') {
                 res.status(422).send(err.message)
             }
             else {
+                console.log(err)
                 res.status(500).send('Server Error')
             }
         }
