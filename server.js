@@ -4,7 +4,7 @@ dotenv.config();
 // Init
 const app = require('./app');
 
-app.listen(1234, function() {
+app.listen(1237, function() {
   console.log("Server started");
 });
 

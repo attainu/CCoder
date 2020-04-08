@@ -13,15 +13,15 @@ const { c, cpp, node, python, java } = require('compile-run');
 
 module.exports = {
 
-    //@access: private;
+        //@access: private;
     //@desc: Creating user defined challenge
     async challenge(req, res) {
         
         try {
-            const errors = validationResult(req)
-        if (!errors.isEmpty()) {
-            throw new Error('Validation error')
-        }
+             const errors = validationResult(req)
+         if (!errors.isEmpty()) {
+             throw new Error('Validation error')
+         }
             const funct_node = (name, no_of_args) => {
                 const func = `
         # Complete the ${name} function below.
@@ -33,18 +33,18 @@ module.exports = {
             }
             const funct_py = (name, no_of_args) => {
                 const func =
-                    `#!/bin/python3
-        import math
-        import os
-        import random
-        import re
-        import sys
-        # Complete the ${name} function below.
-        #You dont need to provide value in arguement it will be given by compiler
-        def ${name}('use ${no_of_args} args here'):
-            return
-        `
-                return func
+`#!/bin/python3
+import math
+import os
+import random
+import re
+import sys
+# Complete the ${name} function below.
+#You dont need to provide value in arguement it will be given by compiler
+def ${name}('use ${no_of_args} args here'):
+    return
+`
+    return func
             }
             const funct_c = (no_of_args, input, output) => {
                 const func = `#include<stdio.h>
@@ -70,7 +70,6 @@ using namespace std;
 // I will be sending ${no_of_args} arguements as input
 // sample input :${input}
 // Sample output: ${output} 
-
 int main()
 {
     int a, b;
@@ -79,7 +78,6 @@ int main()
     sumOfTwoNumbers = firstNumber + secondNumber;
     // Only One Print Statement Should be used
     cout << ;     
-
     return 0;
 }`
                 return func
@@ -100,19 +98,19 @@ public class Solution {
                 return func
             }
             const user = req.user
-            const { name, description, question, input, output, editorial, maxScore, func_name, no_of_args } = req.body;
+            const { name, description, question, input, output, editorial, maxScore, func_name, no_of_args,constraints } = req.body;
             const func_py = funct_py(func_name, no_of_args)
             const func_node = funct_node(func_name, no_of_args)
             const func_java = funct_java(no_of_args, input, output)
             const func_c = funct_c(no_of_args, input, output)
             const func_cpp = funct_cpp(no_of_args, input, output)
             if (user === undefined) {
-                const challenge = await Challenge.create({ name, description, question, input, output, editorial, maxScore, func_name, no_of_args, func_py, func_node, func_java, func_c, func_cpp });
-                //console.log(challenge)
+                const challenge = await Challenge.create({ name, description, question, input, output, editorial,constraints, maxScore, func_name, no_of_args, func_py, func_node, func_java, func_c, func_cpp });
+
                 res.status(201).json({ status: 201, challenge: challenge });
             }
             else {
-                const challenge = await Challenge.create({ name, description, question, input, output, editorial, maxScore, createdBy: user._id, func_name, no_of_args, func_py, func_node, func_java, func_c, func_cpp });
+                const challenge = await Challenge.create({ name, description, question, input, output, editorial,constraints, maxScore, createdBy: user._id, func_name, no_of_args, func_py, func_node, func_java, func_c, func_cpp });
                 user.challenge.push(challenge._id)
                 await user.save()
                 res.status(201).json({ status: 201, challenge: challenge, createdBy: user._id });
@@ -137,6 +135,7 @@ public class Solution {
         }
     },
 
+
     //@access:private
     //@desc : For Adding Test case for challenge
     async testCase(req, res) {
@@ -155,11 +154,14 @@ public class Solution {
                     throw new Error('Invalid Challenge')
                 }
                 let func = challenge[0].func_name
-                input = input.split(",")
+                input = input.split(";")
                 let newinput = [];
                 for (i = 0; i < input.length; i++) {
                     if (isNaN(input[i]) == false) {
                         newinput.push(parseInt(input[i]))
+                    }
+                    else if(input[i].includes('[')||input[i].includes('{')){
+                        newinput.push(input[i])
                     }
                     else if (typeof (input[i]) == 'string') {
                         newinput.push(`"${input[i]}"`)
@@ -169,11 +171,13 @@ public class Solution {
                     }
                 }
                 let testCase = 0
+                console.log(newinput)
                 if (typeof (input) == 'string') {
                     testCase = await Testcase.create({ rawinput: `${newinput}`, result, input: `${func}(${newinput})`, challenge: challenge[0]._id });
                 }
                 else {
                     testCase = await Testcase.create({ rawinput: `${newinput}`, result, input: `${func}(${newinput})`, challenge: challenge[0]._id });
+
                 }
 
                 challenge[0].testCases.push(testCase)
@@ -186,11 +190,15 @@ public class Solution {
                     throw new Error('Invalid Challenge')
                 }
                 let func = challenge[0].func_name
-                input = input.split(",")
+                input = input.split(";")
                 let newinput = [];
+                console.log(input.length)
                 for (i = 0; i < input.length; i++) {
                     if (isNaN(input[i]) == false) {
                         newinput.push(parseInt(input[i]))
+                    }
+                    else if(input[i].includes('[')||input[i].includes('{')){
+                        newinput.push(input[i])
                     }
                     else if (typeof (input[i]) == 'string') {
                         newinput.push(`"${input[i]}"`)
@@ -214,6 +222,7 @@ public class Solution {
 
         }
         catch (err) {
+            console.log(err)
             if (err.message == 'Invalid Challenge') {
                 res.status(404).send(err.message)
             }
@@ -542,7 +551,8 @@ public class Solution {
             const maxScore = challenge[0].maxScore;
             const no_of_args = challenge[0].no_of_args
             const input = challenge[0].input
-            const challengeCreation = await Challenge.create({ name, description, question, output, input, editorial, maxScore, func_name, func_py, func_node, func_java, func_c, func_cpp, no_of_args, testCases: testCase, createdBy: user._id, contest: contest[0]._id })
+            const constraints = challenge[0].constraints
+            const challengeCreation = await Challenge.create({ name, description,constraints ,question, output, input, editorial, maxScore, func_name, func_py, func_node, func_java, func_c, func_cpp, no_of_args, testCases: testCase, createdBy: user._id, contest: contest[0]._id })
             contest[0].challenges.push(challengeCreation)
             contest[0].save()
             res.json({ challenge: challengeCreation })
@@ -641,62 +651,61 @@ public class Solution {
         try {
             const funct_node = (name, no_of_args) => {
                 const func = `
-    # Complete the ${name} function below.
-    #You dont need to provide value in arguement it will be given by compiler
-    function ${name}('use ${no_of_args} args here'){
-        return
+# Complete the ${name} function below.
+#You dont need to provide value in arguement it will be given by compiler
+function ${name}('use ${no_of_args} args here'){
+    return
     }`
                 return func
             }
             const funct_py = (name, no_of_args) => {
                 const func =
-                    `#!/bin/python3
-    import math
-    import os
-    import random
-    import re
-    import sys
-    # Complete the ${name} function below.
-    #You dont need to provide value in arguement it will be given by compiler
-    def ${name}('use ${no_of_args} args here'):
-        return
-    `
+`#!/bin/python3
+import math
+import os
+import random
+import re
+import sys
+# Complete the ${name} function below.
+#You dont need to provide value in arguement it will be given by compiler
+def ${name}('use ${no_of_args} args here'):
+    return
+`
                 return func
             }
             const funct_c = (no_of_args, input, output) => {
                 const func = `#include<stdio.h>
-              /**
-              * Complete this method
-              * I will be sending ${no_of_args} input
-              * sample ${input} so use symbol in scanf according to the sample.
-              * Sample output should be like this ${output} 
-              */
-              void main()
-              {    
-                
-                  scanf("");
-                  printf("",result);
-                  return 0;
-              }`
+/**
+* Complete this method
+* I will be sending ${no_of_args} input
+* sample ${input} so use symbol in scanf according to the sample.
+* Sample output should be like this ${output} 
+*/
+void main()
+    {    
+    scanf("");
+    printf("",result);
+    return 0;
+}`
                 return func
             }
             const funct_cpp = (no_of_args, input, output) => {
                 const func = `#include <iostream>
-              using namespace std;
+using namespace std;
 // Complete this method
 // I will be sending ${no_of_args} arguements as input
 // sample input :${input}
 // Sample output: ${output} 
               
-    int main()
-          {
-              int a, b;
-              // All the required Input Should be taken in single Statement
-              cin >> b >> a;
-              sumOfTwoNumbers = firstNumber + secondNumber;
-              // Only One Print Statement Should be used
-              cout << ;     
-              return 0;
+int main()
+    {
+    int a, b;
+    // All the required Input Should be taken in single Statement
+    cin >> b >> a;
+    sumOfTwoNumbers = firstNumber + secondNumber;
+    // Only One Print Statement Should be used
+    cout << ;     
+    return 0;
 }`
                 return func
             }

@@ -17,6 +17,10 @@ const challengeSchema = new Schema(
       type: String,
       required: true
     },
+    constraints:{
+      type:String,
+      required:true
+    },
     func_name: {
       type: String,
       required: true
@@ -97,7 +101,6 @@ const challengeSchema = new Schema(
   },
   { timestamps: true }
 );
-
 const Challenge = mongoose.model("challenge", challengeSchema);
 
 module.exports = Challenge;
