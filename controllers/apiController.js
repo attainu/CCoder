@@ -728,6 +728,7 @@ public class Solution {
             const challengename = req.params.challenge
             const details = req.body
             const challenge = await Challenge.find({ name: challengename })
+            //console.log(challenge, user)
             if (challenge.length == 0) {
                 throw new Error('challenge not found')
             }
@@ -752,18 +753,17 @@ public class Solution {
             if (user === undefined) {
                 const newchallenge = await Challenge.updateOne(
                     { name: challengename, createdBy: null },
-                    { ...details },
-                    { new: true }
+                    { ...details }
                 )
                 res.json({ updatechallenge: newchallenge })
             } else {
-                if (user._id != challenge[0].createdBy) {
+                console.log(user._id, challenge[0].createdBy)
+                if (String(user._id) != challenge[0].createdBy) {
                     throw new Error('You are not authorized')
                 }
                 const newchallenge = await Challenge.updateOne(
                     { name: challengename, createdBy: user._id },
-                    { ...details },
-                    { new: true }
+                    { ...details }
                 )
                 res.json({ updatechallenge: newchallenge })
             }
@@ -1036,7 +1036,7 @@ public class Solution {
                     throw new Error('challenge not found')
                 }
 
-                if (user._id != challenge[0].createdBy) {
+                if (String(user._id) != challenge[0].createdBy) {
                     throw new Error('You are not authorized')
                 }
 

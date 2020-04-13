@@ -17,13 +17,13 @@ module.exports = {
             const {name, username,email, password, experience, education} = req.body;
             const createUser = await User.create({name, username,email, password, experience, education,isThirdPartyUser: false});
             await createUser.generateAuthToken("confirm");
+            createUser.accessToken = "please verify your email"
             res.status(201).json({
                 statusCode:201,
                 createUser,
                 expiresIn: "24h"
             });
         } catch (err) {
-            console.log(err)
             res.status(500).send('Server Error');
         }
     },
