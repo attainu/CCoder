@@ -24,6 +24,10 @@ module.exports = {
                 expiresIn: "24h"
             });
         } catch (err) {
+            if(err.code===11000){
+                res.status(409).send("User already Exists")
+            }
+            console.log(err)
             res.status(500).send('Server Error');
         }
     },
@@ -34,7 +38,7 @@ module.exports = {
         try {
             const confirmToken = req.params.token;
             const user = await User.findByToken(confirmToken);
-            res.json(user);
+            res.json({Message:"Your Account Is Verified Please Login On Our Platform"});
         } catch (err) {
             console.log(err.message);
             res.status(500).send("server error");
@@ -98,14 +102,9 @@ module.exports = {
     //@desc:For user profile update
     //@access:PRIVATE
     async userProfileUpdate(req, res){
-        const errors = validationResult(req)
-        if (!errors.isEmpty()) {
-          return res.status(422).json({ errors: errors.array() })
-        }
         try {
             const token = req.params.token
-
-            const profileUpdate = await User.updateOne({accessToken: token},{...req.body},{new: true});
+            const profileUpdate = await User.updateOne({accessToken: token},{...req.body});
             res.status(201).send(profileUpdate);
         } catch (err) {
             console.log(err.message);
@@ -222,7 +221,7 @@ module.exports = {
           sameSite: "none"
         });
         // Redirect to the clients route (http://localhost:1234)
-        //res.redirect("http://localhost:1234/#dashboard");
+        // res.redirect("http://ccoder.herokuapp.com/#login");
         res.send("Received");
       },
 

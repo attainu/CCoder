@@ -88,7 +88,8 @@ test('should post a Accept response of POST /admin/challenge ',function(done){
         func_name:"add",
         no_of_args:2,
         editorial:"print(a+b)",
-        maxScore:40
+        maxScore:40,
+        constraints: "ab"
     })
       .set('Accept', 'application/json')
       .expect('Content-Type', /json/)
@@ -167,7 +168,8 @@ describe('Challenge Creation with testcases', () => {
           func_name:"add",
           no_of_args:2,
           editorial:"print(a+b)",
-          maxScore:40
+          maxScore:40,
+          constraints: "ab"
       })
         .set('Accept', 'application/json')
         .expect('Content-Type', /json/)
@@ -400,8 +402,8 @@ describe('Contest Creation with Adding Moderator signups and Adding Challenges',
       .post(`/contest/new/${user.accessToken}`)
       .send({
         name: "hacker",
-        startTime: "30-03-2020",
-        endTime: "01-04-2020",
+        startTime:"2020-04-15T16:00:00",
+	      endTime:"2020-04-16T20:30:00",
         organizationName: "CCoder",
         organizationType: "startup",
         scoring: 400,
@@ -424,8 +426,8 @@ describe('Contest Creation with Adding Moderator signups and Adding Challenges',
       .post(`/contest/new/${user.accessToken}`)
       .send({
         name: "hacker",
-        startTime: "30-03-2020",
-        endTime: "01-04-2020",
+        startTime:"2020-04-15T16:00:00",
+	      endTime:"2020-04-16T20:30:00",
         organizationName: "CCoder",
         organizationType: "startup",
         scoring: 400,

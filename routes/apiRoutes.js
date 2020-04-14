@@ -1,12 +1,14 @@
 const { Router } = require("express");
 const router = Router()
-const { testCase, submission, challengeDiscussion, challenge, contest, signup, addBookmark, getChallenge, contestChallenge, contestModerator, updateChallenge, deleteBookmark, challengeLeaderboard, testCaseUpdate, testCaseDelete, contestUpdate, deleteChallenge, deleteContestModerator, deleteContest,allChallenge} = require("../controllers/apiController");
+const { testCase, submission, challengeDiscussion, challenge, contest, signup, addBookmark, getChallenge, contestChallenge, contestModerator, updateChallenge, deleteBookmark, challengeLeaderboard, testCaseUpdate, testCaseDelete, contestUpdate, deleteChallenge, deleteContestModerator, deleteContest,allChallenge,specChallenge,specContest,allContest,getAllBookmarks,getAllSubmissons,getChallengeSubmission} = require("../controllers/apiController");
 const authenticate = require('../middlewares/authenticate');
 const { check } = require("express-validator")
+const path = require('path');
 
 
 //----------------------------------@ADMIN ROUTES-----------------------------------
 // -------------------------------------------------------------------------------------------------------
+
 
 
 //challenge creation by admin
@@ -129,7 +131,7 @@ router.post("/contest/new/:token", [
     authenticate], contest);
 
 //Adding challenge
-router.get("/contest/:token", authenticate, getChallenge);
+router.get("/contest/available/challenge/:token", authenticate, getChallenge);
 router.post("/contest/:contest/addchallenge/:challenge/:token", authenticate, contestChallenge);
 
 //Adding deleting moderator
@@ -146,8 +148,22 @@ router.patch("/contest/:contest/update/:token", authenticate, contestUpdate);
 router.delete("/contest/delete/:contest/:token", authenticate, deleteContest);
 
 
-//PUBLIC
-router.get("/dashboard", allChallenge);
+//GET
+router.get("/dashboard/challenges/:token", authenticate,allChallenge);
+router.get("/dashboard/contests/:token",  authenticate,allContest);
+router.get("/dashboard/challenges/:challengename/:token", authenticate ,specChallenge);
+router.get("/dashboard/contests/:contestname/:token", authenticate ,specContest);
+router.get("/user/bookmarks/:token", authenticate, getAllBookmarks);
 
+//@ get submissions 
+router.get("/user/submission/:token", authenticate, getAllSubmissons);
+
+//@ get Specific challenge submission
+router.get("/:challenge/submission/:token", authenticate, getChallengeSubmission);
+
+
+router.get("/",function(req,res){
+    res.sendFile(path.join(__dirname+'/index.html'));
+})
 
 module.exports = router;

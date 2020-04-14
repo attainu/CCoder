@@ -42,14 +42,7 @@ router.get('/user/me/:token', authenticate, singleUser);
 
 // UserProfile Update
 //updation
-router.patch('/user/userprofile/:token', [
-    check('username')
-        .isLength({ min: 4 }).trim()
-        .withMessage('Username must have minimum 4 characters.')
-        .matches(/^[a-zA-Z0-9_]+$/, 'i')
-        .withMessage('Username must be alphanumeric, and can contain underscores'),
-    authenticate
-], userProfileUpdate);
+router.patch('/user/userprofile/:token', authenticate, userProfileUpdate);
 
 // User Profile Pic update
 router.post("/user/userimageupload/:token", authenticate, upload.single("file"), userImageUpdate);
@@ -78,11 +71,11 @@ router.patch("/reset/:resetToken", [
 // Google Registeration/Login
 router.get("/google", passport.authenticate("google", { session: false, scope: ["profile", "email"] }));
 
-router.get("/google/redirect", passport.authenticate("google", { session: false, failureRedirect: "http://localhost:1234/#login" }), fetchUserFromGoogle);
+router.get("/google/redirect", passport.authenticate("google", { session: false, failureRedirect: "http://ccoder.herokuapp.com/#login" }), fetchUserFromGoogle);
 
 // GitHub Registeration/Login
 router.get("/github", passport.authenticate("github", { session: false, scope: ['user:email'] }));
 
-router.get("/github/callback", passport.authenticate("github", { session: false, failureRedirect: "http://localhost:1234/github" }), fetchUserFromGithub);
+router.get("/github/callback", passport.authenticate("github", { session: false, failureRedirect: "http://ccoder.herokuapp.com/#login" }), fetchUserFromGithub);
 
 module.exports = router;
